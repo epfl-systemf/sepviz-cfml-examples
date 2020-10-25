@@ -21,7 +21,11 @@ function parse_sep(sep) {
     }
 
     function resolve(name, ctx) {
-        return ctx.get(name, name);
+        return ctx.get(name, {
+            global: true,
+            uid: name,
+            label: name
+        });
     }
 
     function loop(sep, ctx) {
@@ -30,13 +34,21 @@ function parse_sep(sep) {
             sep.conjuncts.forEach(c => loop(c, ctx));
             break;
         case "existential":
-            ctx = ctx.set(sep.binder, next(sep.binder));
+            ctx = ctx.set(sep.binder, {
+                global: false,
+                uid: next(sep.binder),
+                label: sep.binder
+            });
             loop(sep.body, ctx);
             break;
         case "points-to":
             const addr = resolve(sep.from, ctx);
             const [constr, ...args] = sep.to;
-            memories[addr] = [constr, args.map(a => resolve(a, ctx))];
+            memories[addr.uid] = {
+                addr,
+                constr,
+                args: args.map(a => resolve(a, ctx))
+            };
             break;
         case "gc":
             break;
@@ -131,30 +143,31 @@ function render_sep(container, memories) {
     // g.setEdge("p2$ptr", "p2", { ...EDGE });
 
     // var gensym = 0;
-    for (var addr in memories) {
+    for (var uid in memories) {
         const ptr = addr + "!ptr";
         const record = addr + "!record";
 
-        g.setNode(ptr, { label: addr, ...POINTER_NODE });
-        console.log("node:", ptr);
-        g.setNode(record, { ...RECORD_NODE });
-        console.log("node:", record);
+        const {addr, constr, args} = memories[uid];
 
-        const [hd, args] = memories[addr];
-        g.setNode(addr, { label: hd, ...HEAD_NODE });
-        console.log("node:", addr);
+        g.setNode(ptr, { label: addr.label, ...POINTER_NODE });
+        // console.log("node:", ptr);
+        g.setNode(record, { ...RECORD_NODE });
+        // console.log("node:", record);
+
+        g.setNode(addr, { label: constr, ...HEAD_NODE });
+        // console.log("node:", addr);
         g.setParent(addr, record);
         g.setEdge(ptr, addr, { ...EDGE });
-        console.log("edge:", ptr, "→", addr);
+        // console.log("edge:", ptr, "→", addr);
 
         args.forEach((a, id) => {
             const arg = addr + "!arg!" + id;
             g.setNode(arg, { label: a, ...ARG_NODE });
             g.setParent(arg, record);
-            console.log("node:", arg);
+            // console.log("node:", arg);
             if (a in memories) {
                 g.setEdge(arg, a, { ...EDGE });
-                console.log("edge:", arg, "→", a);
+                // console.log("edge:", arg, "→", a);
             }
         });
 
@@ -217,41 +230,46 @@ function render_sep(container, memories) {
 function render_sep(container, memories) {
     var nodes = [];
     var edges = [];
-    var constraints = [];
+    // var constraints = [];
 
-    for (var addr in memories) {
-        const ptr = addr + "!ptr";
-        const record = addr + "!record";
+    for (var uid in memories) {
+        const {addr, constr, args} = memories[uid];
 
-        nodes.push({ data: { id: ptr, label: addr } });
-        console.log("node:", ptr);
-        nodes.push({ data: { id: record } });
-        console.log("node:", record);
+        const ptr = addr.uid + "!ptr";
 
-        const [hd, args] = memories[addr];
-        nodes.push({ data: { id: addr, label: hd, parent: record } });
-        console.log("node:", addr);
-        edges.push({ data: { id: ptr + "→" + addr, source: ptr, target: addr }});
-        console.log("edge:", ptr, "→", addr);
+        const label = constr + ' ' + args.map(a => a.label).join(' ');
+        nodes.push({ data: { id: addr.uid, label } });
+        // console.log("node:", addr);
 
-        var constraint = [{ node: addr }];
-        constraints.push(constraint);
-        args.forEach((a, id) => {
-            const arg = addr + "!arg!" + id;
-            nodes.push({ data: { id: arg, label: a, parent: record } });
-            constraint.push({ node: arg });
-            console.log("node:", arg);
-            if (a in memories) {
-                edges.push({ data: { id: arg + "→" + a, source: arg, target: a }});
-                console.log("edge:", arg, "→", a);
-            }
-        });
-
-        // break;
+        if (addr.global) {
+            nodes.push({ data: { id: ptr, label: addr.label } });
+            edges.push({ data: { id: ptr + "→" + addr.uid, source: ptr, target: addr.uid }});
+        }
+        // console.log("node:", ptr);
+        // nodes.push({ data: { id: record } });
+        // console.log("node:", record);
+        // console.log("edge:", ptr, "→", addr);
     }
 
-    console.log(nodes);
-    console.log(edges);
+    for (var uid in memories) {
+        const {addr, constr, args} = memories[uid];
+
+        // var constraint = [{ node: addr }];
+        // constraints.push(constraint);
+        args.forEach((a, id) => {
+            const arg = addr.uid + "!arg!" + id;
+            // nodes.push({ data: { id: arg, label: a } });
+            // constraint.push({ node: arg });
+            // console.log("node:", arg);
+            if (a.uid in memories) {
+                edges.push({ data: { id: arg + "→" + a.uid, source: addr.uid, target: a.uid }});
+                // console.log("edge:", arg, "→", a);
+            }
+        });
+    }
+
+    // console.log(nodes);
+    // console.log(edges);
 
     var cy = cytoscape({
         container,
@@ -262,6 +280,8 @@ function render_sep(container, memories) {
             {
                 selector: 'node[label]',
                 css: {
+                    'shape': 'rectangle',
+                    'width': 'label',
                     'content': 'data(label)',
                     'text-valign': 'center',
                     'text-halign': 'center'
@@ -283,40 +303,66 @@ function render_sep(container, memories) {
             }
         ],
 
-        elements: {
-            nodes
-            // : [
-            //     { data: { id: 'a', parent: 'b' }, position: { x: 215, y: 85 } },
-            //     { data: { id: 'b' } },
-            //     { data: { id: 'c', parent: 'b' }, position: { x: 300, y: 85 } },
-            //     { data: { id: 'd' }, position: { x: 215, y: 175 } },
-            //     { data: { id: 'e' } },
-            //     { data: { id: 'f', parent: 'e' }, position: { x: 300, y: 175 } }
-            // ]
-            ,
-            edges
-            // : [
-            //     { data: { id: 'ad', source: 'a', target: 'd' } },
-            //     { data: { id: 'eb', source: 'e', target: 'b' } }
-            // ]
-        },
+        elements: { nodes, edges },
 
-        // layout: {
-        //     name: 'cola',
-        //     flow: { axis: 'x', minSeparation: 20 }
-        // }
+        layout: {
+            name: 'dagre',
+            // flow: { axis: 'x', minSeparation: 20 }
+        }
     });
 
-    constraints = constraints.map(c =>
-        c.map(({ node }, offset) => ({ node: cy.$id(node), offset })));
+    // constraints = constraints.map(c =>
+    //     c.map(({ node }, offset) => ({ node: cy.$id(node), offset })));
 
-    cy.layout({
-            name: 'cola',
-            flow: { axis: 'x', minSeparation: 20 }, // use DAG/tree flow layout if specified, e.g. { axis: 'y', minSeparation: 30 }
-            // alignment: { horizontal: constraints }, // relative alignment constraints on nodes, e.g. {vertical: [[{node: node1, offset: 0}, {node: node2, offset: 5}]], horizontal: [[{node: node3}, {node: node4}], [{node: node5}, {node: node6}]]}
+    // cy.layout({
+    //         name: 'cola',
+    //         flow: { axis: 'x', minSeparation: 20 }, // use DAG/tree flow layout if specified, e.g. { axis: 'y', minSeparation: 30 }
+    //         // alignment: { horizontal: constraints }, // relative alignment constraints on nodes, e.g. {vertical: [[{node: node1, offset: 0}, {node: node2, offset: 5}]], horizontal: [[{node: node3}, {node: node4}], [{node: node5}, {node: node6}]]}
 
-            // padding: 5
-    }).run();
+    //         // padding: 5
+    // }).run();
+}
+
+function render_sep(container, memories) {
+    var nodes = [];
+    var edges = [];
+
+    for (var uid in memories) {
+        const {addr, constr, args} = memories[uid];
+
+        const ptr = addr.uid + "!ptr";
+
+        const label = constr + ' ' + args.map(a => a.label).join(' ');
+        nodes.push({ data: { id: addr.uid, label } });
+        // console.log("node:", addr);
+
+        if (addr.global) {
+            nodes.push({ data: { id: ptr, label: addr.label } });
+            edges.push({ data: { id: ptr + "→" + addr.uid, source: ptr, target: addr.uid }});
+        }
+        // console.log("node:", ptr);
+        // nodes.push({ data: { id: record } });
+        // console.log("node:", record);
+        // console.log("edge:", ptr, "→", addr);
+    }
+
+    for (var uid in memories) {
+        const {addr, constr, args} = memories[uid];
+
+        // var constraint = [{ node: addr }];
+        // constraints.push(constraint);
+        args.forEach((a, id) => {
+            const arg = addr.uid + "!arg!" + id;
+            // nodes.push({ data: { id: arg, label: a } });
+            // constraint.push({ node: arg });
+            // console.log("node:", arg);
+            if (a.uid in memories) {
+                edges.push({ data: { id: arg + "→" + a.uid, source: addr.uid, target: a.uid }});
+                // console.log("edge:", arg, "→", a);
+            }
+        });
+    }
+
 }
 
 function render_embedded() {
