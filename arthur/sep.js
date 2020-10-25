@@ -11,13 +11,13 @@
 // }
 
 function parse_sep(sep) {
-    var objects = [];
-    var gensym = {};
+    let objects = [];
+    let gensym = {};
 
     function next(prefix) {
         if (!(prefix in gensym))
             gensym[prefix] = 0;
-        return prefix + "$" + (gensym[prefix]++);
+        return gensym[prefix]++;
     }
 
     function resolve(name, ctx) {
@@ -34,10 +34,11 @@ function parse_sep(sep) {
             sep.conjuncts.forEach(c => loop(c, ctx));
             break;
         case "existential":
+            const num = next(sep.binder);
             ctx = ctx.set(sep.binder, {
                 global: false,
-                uid: next(sep.binder),
-                label: sep.binder
+                uid: sep.binder + "$" + num,
+                label: `?${sep.binder}${num}`
             });
             loop(sep.body, ctx);
             break;
@@ -60,7 +61,7 @@ function parse_sep(sep) {
 }
 
 function parse(term) {
-    var string = [], stack = [];
+    let string = [], stack = [];
     SepParser.parse(term).forEach(x => {
         if (typeof x === 'object' && 'raw' in x) {
             stack.push(string.join(""));
@@ -88,6 +89,12 @@ function graphviz_input_ports_of_object(obj) {
     }
 }
 
+var SepFontInfo = {
+    name: "Iosevka",
+    size: 12.0,
+    charwidth: 6.875,
+}
+
 function graphviz_label_of_object(obj, known_uids) {
     const xml = (node, default_attrs={}) => (attrs, ...contents) =>
           [node, { ...default_attrs, ...attrs}, ...contents];
@@ -98,20 +105,36 @@ function graphviz_label_of_object(obj, known_uids) {
                                  cellpadding: 2 }),
           tr = xml('tr'), td = xml('td'), font = xml('font');
 
+    // A hack because Viz.js has incorrect font metrics
+    // See https://github.com/mdaines/viz.js/wiki/Caveats
+    const centered = (v, fontsize=12.0) => {
+        const width = fontsize / SepFontInfo.size * SepFontInfo.charwidth * v.length;
+        return table({ border: 0,
+                       cellborder: 0,
+                       cellspacing: 0,
+                       cellpadding: 0,
+                       fixedsize: true,
+                       width }, // FIXME also compute the height?
+                     tr({}, td({}, v)));
+    };
+
     const header =
           tr({}, td({ colspan: 2, cellpadding: 0, sides: "b" },
-                    font({ ['point-size']: 8 }, obj.constr)));
+                    font({ ['point-size']: 8 },
+                         centered(obj.constr, 8))));
 
     const value = (port, val) =>
-          tr({}, td({ port, colspan: 2 }, val.label));
+          tr({}, td({ port, colspan: 2 },
+                    centered(val.label)));
 
     const value_null = (port) =>
-          tr({}, td({ port, colspan: 2 }, "∅"));
+          tr({}, td({ port, colspan: 2 },
+                    centered("∅")));
 
     const pointer = (port_in, port_out, ptr) =>
           tr({},
-             td({ port: port_in, sides: "tlb" }, ptr.label),
-             td({ port: port_out, sides: "trb" }, "⏺"));
+             td({ port: port_in, sides: "tlb" }, centered(ptr.label)),
+             td({ port: port_out, sides: "trb" }, centered("⏺")));
 
     const value_or_ptr = (port_in, port_out, v) =>
           (v.uid in known_uids ?
@@ -137,9 +160,9 @@ function graphviz_label_of_object(obj, known_uids) {
     }
 }
 
-function graphviz_node_of_object(obj, known_uids) {
+function graphviz_node_of_object(obj, idx, known_uids) {
     return {
-        name: obj.addr.uid,
+        name: obj.addr.uid, idx,
         props: { label: graphviz_label_of_object(obj, known_uids) }
     };
 }
@@ -173,45 +196,66 @@ function graphviz_edges_of_object(obj, input_port_of_uid) {
     }
 }
 
-function graphviz_pointer_edges_of_object(obj, input_port_of_uid) {
-    if (obj.addr.global) {
+function graphviz_pointers_of_object(obj, input_port_of_uid, has_incoming_edges) {
+    if (obj.addr.global && !has_incoming_edges[obj.addr.uid]) {// (!) {
         const in_port = input_port_of_uid[obj.addr.uid] || [];
-        return  { src: ["_" + obj.addr.label],
-                  dst: [obj.addr.uid, ...in_port, "nw"],
-                  props: { tailclip: true } };
+        const ptr_node = obj.addr.uid + '$ptr';
+        return  { nodes: [{ name: ptr_node,
+                            props: { label: obj.addr.label,
+                                     fontsize: 10,
+                                     width: 0 } }],
+                  edges: [{ src: [ptr_node, "e"],
+                            dst: [obj.addr.uid, ...in_port, "nw"],
+                            props: { tailclip: true, minlen: 1 } }] };
     } else {
-        return [];
+        return { nodes: [], edges: [] };
     }
 }
 
-function graphviz_graph_of_objects(objects) {
+
+function graphviz_elements_of_objects(objects) {
     const input_port_of_uid =
           Object.assign({}, ...objects.map(graphviz_input_ports_of_object));
-    const nodes = objects.map(o =>
-        graphviz_node_of_object(o, input_port_of_uid));
+    const nodes = objects.map((o, idx) =>
+        graphviz_node_of_object(o, idx, input_port_of_uid));
     const edges =
-          [].concat(...objects.map(o => graphviz_edges_of_object(o, input_port_of_uid)),
-                    ...objects.map(o => graphviz_pointer_edges_of_object(o, input_port_of_uid)));
-    // TODO: https://graphviz.org/doc/info/attrs.html#k:packMode explains how
-    // packmode can be used to preserve the order of the clusters
+          [].concat(...objects.map(o => graphviz_edges_of_object(o, input_port_of_uid)));
+
+    let has_incoming_edges = {};
+    edges.forEach(({ dst }) => has_incoming_edges[dst[0]] = true);
+    objects.forEach(o => {
+        let { nodes: ns, edges: es } = graphviz_pointers_of_object(o, input_port_of_uid, has_incoming_edges);
+        nodes.push(...ns);
+        edges.push(...es);
+    });
+    // TODO: https://graphviz.org/doc/info/attrs.html#a:sortv explains how packmode can be used to preserve the order of the clusters
+    // TODO: Add one graph per connected component, use HTML+CSS do the layout as inline-blocks (see ccomps)
     const props = [
         { target: "graph", props: {
             rankdir: "LR",
-            ranksep: 0.35,
+            ranksep: 0.1,
+            nodesep: 0.2,
+            concentrate: false,
             splines: true,
             packmode: "array",
             truecolor: true,
             fontsize: 12,
+            width: 12,
             bgcolor: "#00000000" } },
-        { target: "edge", props: { fontname: "Iosevka", tailclip: false, minlen: 1 } },
-        { target: "node", props: { shape: "plaintext", fontname: "Iosevka", sep: 2 } }
+        { target: "edge", props: {
+            fontname: SepFontInfo.name,
+            tailclip: false,
+            arrowsize: 0.5,
+            minlen: 3 } },
+        { target: "node", props: {
+            shape: "plaintext",
+            fontname: SepFontInfo.name } }
     ];
 
-    return { name: "G",
-             objects: [...props, ...nodes, ...edges] };
+    return [...props, ...nodes, ...edges];
 }
 
-function graphviz_render_text(graph) {
+function graphviz_render_text(graph_name, elements) {
     const map_dict = (attrs, fn) =>
           Object.entries(attrs).filter(v => v[1] !== null).map(fn);
 
@@ -256,57 +300,25 @@ function graphviz_render_text(graph) {
         return "";
     };
 
-    return [`digraph ${graph.name} {`,
-            ...graph.objects.map(render_one),
+
+    return [`digraph ${JSON.stringify(graph_name)} {`,
+            ...elements.map(render_one),
             "}"].join("\n");
 }
 
 var viz = new Viz();
 
-function render_graphviz(container, objects) {
-    const graph = graphviz_graph_of_objects(objects);
-
-    // FIXME missing pointer name edges
-
-    viz.renderSVGElement(graphviz_render_text(graph))
+function render_graphviz(container, fragment) {
+    const graph = graphviz_elements_of_objects(fragment.objects);
+    const dot = graphviz_render_text(fragment.raw, graph);
+    viz.renderSVGElement(dot)
         .then(element => container.append(element))
         .catch(error => {
-            // Create a new Viz instance (@see Caveats page for more info)
+            // https://github.com/mdaines/viz.js/wiki/Caveats
             viz = new Viz();
             console.error(error);
         });
-    return;
-
-    // FIXME
-    objects.forEach(({addr, constr, args}) => {
-        const ptr = addr.uid + "!ptr";
-
-        const label = constr + ' ' + args.map(a => a.label).join(' ');
-        nodes.push({ data: { id: addr.uid, label } });
-        // console.log("node:", addr);
-
-        if (addr.global) {
-            nodes.push({ data: { id: ptr, label: addr.label } });
-            edges.push({ data: { id: ptr + "→" + addr.uid, source: ptr, target: addr.uid }});
-        }
-        // console.log("node:", ptr);
-        // nodes.push({ data: { id: record } });
-        // console.log("node:", record);
-        // console.log("edge:", ptr, "→", addr);
-    });
-
-    objects.forEach(({addr, constr, args}) => {
-        args.forEach((a, id) => {
-            const arg = addr.uid + "!arg!" + id;
-            // nodes.push({ data: { id: arg, label: a } });
-            // constraint.push({ node: arg });
-            // console.log("node:", arg);
-            if (a.uid in objects) {
-                edges.push({ data: { id: arg + "→" + a.uid, source: addr.uid, target: a.uid }});
-                // console.log("edge:", arg, "→", a);
-            }
-        });
-    });
+    return dot;
 }
 
 function render_embedded() {
@@ -316,14 +328,26 @@ function render_embedded() {
 
         parse(goal.innerText).forEach(fragment => {
             if (typeof fragment === 'object' && 'raw' in fragment) {
-                const host = document.createElement('span');
-                host.className = "sep-graph";
-                _goal.append(host);
-                render_graphviz(host, fragment.objects);
-                host.onclick = () => {
-                    const text = document.createTextNode(fragment.raw);
-                    host.parentNode.replaceChild(text, host);
+                const graph_node = document.createElement('span');
+                const src_node = document.createElement('span');
+                const dot_node = document.createElement('span');
+
+                const dot_text = render_graphviz(graph_node, fragment);
+                src_node.append(document.createTextNode(fragment.raw));
+                dot_node.append(document.createTextNode(dot_text));
+
+                const views = [graph_node, src_node, dot_node];
+                _goal.append(graph_node);
+
+                const onclick = () => {
+                    _goal.replaceChild(views[1], views[0]);
+                    views.push(views.shift());
                 };
+                views.forEach(v => {
+                    v.className = "sep-graph";
+                    v.onclick = onclick;
+                    v.title = fragment.raw;
+                });
             } else {
                 _goal.append(document.createTextNode(fragment));
             }
