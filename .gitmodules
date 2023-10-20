@@ -1,0 +1,6 @@
+[submodule "arthur/tlc"]
+	path = arthur/tlc
+	url = https://github.com/charguer/tlc.git
+[submodule "arthur/cfml2"]
+	path = arthur/cfml2
+	url = https://gitlab.inria.fr/charguer/cfml2.git
