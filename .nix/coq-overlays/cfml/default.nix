@@ -10,10 +10,24 @@
 with lib;
 mkCoqDerivation {
   pname = "cfml";
-  owner = "charguer";
-  repo = "cfml";
-  version = "master";
-  release."master".sha256 = "sha256-Axn7S7pVRkqY5I4Ler3vLRbKFTYwGcH+ThQYoqP2erU=";
+  # owner = "charguer";
+  # repo = "cfml";
+  # version = "master";
+  # release."master".sha256 = "sha256-Axn7S7pVRkqY5I4Ler3vLRbKFTYwGcH+ThQYoqP2erU=";
+
+  # How to fetch from url:
+  version = "dev";
+  src = builtins.fetchGit {
+    url = "git@github.com:yawen-guan/cfml.git"; # Use ssh for the private repo.
+    ref = "dev";
+    rev = "015ff67689a1f52fb37f933ac5feacc38c377dd6";
+    # Fetch submodules so CFML examples will be compiled in the build phase.
+    # For faster compilation, set `submodules` to `false`.
+    # submodules = true;
+  };
+
+  # How to fetch local files:
+  # src = ~/Repos/cfml;
 
   buildInputs = [ bash ];
   propagatedBuildInputs =

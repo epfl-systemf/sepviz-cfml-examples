@@ -1,1 +1,10 @@
 .direnv/
+*.aux
+*.glob
+*.vo
+*.vos
+*.vok
+*.d
+CoqMakefile
+CoqMakefile.conf
+yawen/_build/
