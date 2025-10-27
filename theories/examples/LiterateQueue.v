@@ -14,33 +14,13 @@ Modified by Yawen.
 *)
 
 #[warnings="-notation-overridden -ambiguous-paths -notation-incompatible-prefix"]
-From CFML Require Import WPLib.
-From Literate.Lib Require Import WPUntyped ListNull.
+From SepDiagram.lib Require Import Notations ListNull.
 
-Declare Custom Entry heap.
-Notation "{*  e  *}" := (e) (e custom heap at level 200, at level 0).
-
-Notation "H1 * H2" :=
-  (hstar H1 H2)
-    (in custom heap at level 41,
-        H2 custom heap at level 41).
-Notation "x ~> S" :=
-  (repr S x)
-    (in custom heap at level 33,
-        x custom heap,
-        S custom heap at level 32).
-Notation "'llet' x := a 'in' v" := ((fun x => v) a) (at level 200).
-Notation "∃  x ,  P" :=
-  (hexists (fun x => P))
-    (in custom heap at level 200, P custom heap at level 200).
-Notation "( x )" := (x) (in custom heap at level 0, x custom heap at level 200).
-Notation "x" := (x) (in custom heap at level 0, x constr at level 200).
-
-(*||*)
-
-Ltac auto_star ::= auto_star_default.
+Ltac auto_star ::=
+  try easy;
+  try solve [ intuition eauto with maths ].
 Ltac auto_tilde ::=
-  intros; subst; try solve [ intuition eauto with maths ].
+  intros; subst; try auto_star.
 
 Implicit Types (p q f b: loc).
 
@@ -71,6 +51,19 @@ Section QueueApiImpl.
     Else ``tt.
 
 End QueueApiImpl.
+
+(*||*)
+
+Lemma Triple_test_drawing_pure_conditions: forall A `{EA: Enc A} (L: list A) p,
+  Triple (is_empty p)
+    (p ~> MQueue L \* \[L <> nil])
+    (fun r => \[r = false] \* p ~> MQueue L \* \[L <> nil]).
+Proof using.
+  xwp. xunfolds MQueue ;=> f b d H.
+  mxapp Triple_get_head. mxapp Triple_get_tail. mxapp Triple_eq.
+  xchanges MListSeg_MCell_conflict ;=> M; auto.
+  apply isTrue_eq_false. intros Heq; apply M in Heq; auto.
+Qed.
 
 Lemma Triple_is_empty : forall A `{EA: Enc A} (L: list A) p,
   Triple (is_empty p)
@@ -103,6 +96,7 @@ Proof using.
   - subst. rew_list. mxvals.
 Qed.
 
+Ltac auto_star ::= auto_star_default.
 Ltac auto_tilde ::= auto_tilde_default.
 
 (*|
@@ -138,4 +132,3 @@ Ltac auto_tilde ::= auto_tilde_default.
 (* Qed. *)
 
 (* TODO: disable RET notation in TRIPLE *)
-

@@ -9,7 +9,7 @@ _build/%.html: theories/examples/%.v
 _build/%: assets/%
 	ln -f $< $@
 
-default: _build/LiterateQueue.html _build/sep.js _build/sep.css _build/parser.js;
+default: _build/LiterateQueue.html _build/LiterateTree.html _build/sep.js _build/sep.css _build/parser.js;
 
 test: default
 	firefox _build/LiterateQueue.html

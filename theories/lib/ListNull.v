@@ -1,6 +1,6 @@
 #[warnings="-notation-overridden -ambiguous-paths -notation-incompatible-prefix"]
 From CFML Require Import WPLib.
-From Literate.Lib Require Import WPUntyped.
+Require Import WPUntyped.
 
 Implicit Types (p q: loc).
 
