@@ -51,18 +51,18 @@ Set up the environment if you have not.
 If you're using nix, run:
 
 ```bash
-make USE_NIX=true
+make USE_NIX=true -j
 ```
 If you're using opam, run:
 
 ```bash
-make
+make -j
 ```
 
 or
 
 ```bash
-make USE_NIX=false
+make USE_NIX=false -j
 ```
 
 The generated html files are in `_build`.
