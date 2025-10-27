@@ -258,7 +258,7 @@ Ltac auto_tilde ::= auto_tilde_default.
 
    <link rel="stylesheet" href="sep.css">
    <script type="module" src="parser.js"></script>
-   <script type="module" src="sep.js"></script>
+   <script type="module" src="newsep.js"></script>
 
 .. coq:: none
 |*)

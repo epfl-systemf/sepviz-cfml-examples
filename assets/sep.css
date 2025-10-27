@@ -1,3 +1,9 @@
+:root {
+    --small-space: 0.5em;
+    --border-color: black;
+    --predicate-gap: 1em;
+}
+
 .sep-graph {
     display: inline-block;
     border: medium outset #888a8588;
@@ -17,4 +23,22 @@
 .sep-graph > span {
     display: inline-block;
     margin: 0.15rem auto;
+}
+
+.sep-pure-predicate-container {
+    border: 1px dotted var(--border-color);
+    padding: var(--small-space);
+    display: flex;
+    wrap: nowrap;
+    gap: var(--predicate-gap);
+}
+
+.sep-pure-predicate {
+    background: #d3e9f0;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.sep-exist-var{
+    color: #3465a4;
 }

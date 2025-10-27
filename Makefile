@@ -17,7 +17,7 @@ VFILES_IN_EXM := LiterateQueue.v LiterateTree.v
 LIB_VFILES := $(addprefix $(LIB)/, $(VFILES_IN_LIB))
 HTML_FILES := $(addprefix $(BUILD_DIR)/, $(VFILES_IN_EXM:.v=.html))
 
-JS_FILES := sep.js parser.js
+JS_FILES := newsep.js parser.js
 
 .PHONY: default prepare tlc install-tlc cfml install-cfml clean-web clean
 
