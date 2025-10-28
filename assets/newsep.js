@@ -3,15 +3,6 @@ import * as SepParser from "./parser.js";
 
 document.addEventListener("DOMContentLoaded", init);
 
-const flatRepresentationPredicates = {
-    'MNode': (formula) => [formula[1], formula[2]],
-    'MCell': (formula) => [formula[1]],
-}
-
-const recursiveRepresentationPredicates = {
-    'MList': (formula) => [formula[1]],
-}
-
 function parseHeapPredicate(hpred) {
     let objects = [];
     let purePredicates = [];
@@ -86,13 +77,20 @@ function parse(term) {
     return stack;
 }
 
+// Create element with class and optional text/attrs.
+function createElement(tag, className, { text, attrs } = {}) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text != null) node.append(document.createTextNode(text));
+  if (attrs) for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  return node;
+}
+
 // Put all pure predicates in a box.
 function renderPurePredicates(purePredicates) {
-    const host = document.createElement("div");
-    host.className = "sep-pure-predicate-container";
+    const host = createElement("div", "sep-pure-predicate-container");
     purePredicates.forEach(predicate => {
-        let predicateNode = document.createElement("div");
-        predicateNode.className = "sep-pure-predicate";
+        let predicateNode = createElement("div", "sep-pure-predicate");
         predicate.forEach((part, index) => {
             if (index != 0)
                 predicateNode.appendChild(document.createTextNode(" "));
@@ -110,7 +108,28 @@ function renderPurePredicates(purePredicates) {
     return host;
 }
 
+// https://github.com/mdaines/viz-js/wiki/Differences-between-Viz.js-2.x-and-3.x
+let vizPromise;
+function vizRender(src) {
+    if (typeof vizPromise === "undefined") {
+        vizPromise = Viz.instance();
+    }
+    return vizPromise.then(viz => viz.renderSVGElement(src));
+}
+
 function renderHeapObjectsInOneDiagram(objects) {
+    console.log("objects = ", objects);
+
+    const diagram = null;
+    const dot = "digraph { a -> b -> c; }";
+    const svgNode = createElement("span", "sep-diagram-svg");
+    const dotNode = createElement("span", "sep-diagram-dot", {text: dot, attrs: null});
+    vizRender(dot)
+        .then(element => svgNode.appendChild(element))
+        .catch(error => {
+            console.error(error);
+        });
+    return {svgNode, dotNode};
 }
 
 function init() {
@@ -121,13 +140,36 @@ function init() {
             // console.log("parseResult = ", parseResult);
             parseResult.forEach(parseUnit => {
                 if (typeof parseUnit === 'object' && 'raw' in parseUnit) {
-                    const host = document.createElement("span");
-                    host.className = "sep-graph";
+                    const host = createElement("span", "sep-visualization");
                     goal.append(host);
-                    if(parseUnit.purePredicates.length > 0) {
-                        host.append(renderPurePredicates(parseUnit.purePredicates));
+                    // A sep-visualization node has two views:
+                    // 1. source-code view
+                    const srcView = createElement("span", "sep-source", {text: parseUnit.raw, attrs: null});
+                    // 2. diagram view: pure predicates + diagram (svg or dot)
+                    const diagramView = createElement("div", "sep-diagram");
+                    const purePredsNode = parseUnit.purePredicates.length
+                        ? renderPurePredicates(parseUnit.purePredicates)
+                        : null;
+                    const {svgNode, dotNode} = renderHeapObjectsInOneDiagram(parseUnit.objects);
+
+                    // default
+                    diagramView.replaceChildren(...[purePredsNode, svgNode].filter(Boolean));
+                    host.replaceChildren(diagramView);
+
+                    // interaction
+                    srcView.onclick = () => {
+                        host.replaceChildren(diagramView);
+                    };
+                    if (purePredsNode) purePredsNode.onclick = () => {
+                        host.replaceChildren(srcView);
                     }
-                    host.append(renderHeapObjectsInOneDiagram(parseUnit.objects));
+                    svgNode.onclick = () => {
+                        diagramView.replaceChild(dotNode, svgNode);
+                    }
+                    dotNode.onclick = () => {
+                        diagramView.replaceChild(svgNode, dotNode);
+                        host.replaceChildren(srcView);
+                    }
                 } else {
                     goal.append(parseUnit);
                 }
