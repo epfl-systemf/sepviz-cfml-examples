@@ -57,6 +57,38 @@ const configOfConstr = {
       },
     },
   },
+  MNode: {
+    inPorts: ["in0"],
+    isFlat: true,
+    args: {
+      0: {
+        inTable: true,
+        inPorts: ["in0"],
+        outPorts: ["out0"],
+      },
+      1: {
+        inTable: true,
+        inPorts: ["in1"],
+        outPorts: ["out1"],
+      },
+      2: {
+        inTable: true,
+        inPorts: ["in2"],
+        outPorts: ["out2"],
+      },
+    },
+  },
+  MTree: {
+    inPorts: ["tree"],
+    isFlat: false,
+    args: {
+      0: {
+        inTable: true,
+        inPorts: ["tree"],
+        outPorts: ["tree"],
+      },
+    },
+  },
 };
 
 function parseHeapPredicate(hpred) {
