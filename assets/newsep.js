@@ -1,19 +1,14 @@
 import * as SepParser from "./parser.js";
 ("use strict");
 
-let configOfConstr = null;
+document.addEventListener("DOMContentLoaded", init);
 
-document.addEventListener("DOMContentLoaded", async () => {
-  configOfConstr = await loadConfig();
-  init();
-});
-
-async function loadConfig() {
-  const response = await fetch("./config_constr.json");
+async function loadRenderConfig() {
+  const response = await fetch("./render_config.json");
   if (!response.ok)
     throw new Error(`Failed to load config: ${response.status}`);
-  const configOfConstr = await response.json();
-  return configOfConstr;
+  const config = await response.json();
+  return config;
 }
 
 function parseHeapPredicate(hpred) {
@@ -150,16 +145,16 @@ class GraphvizEdge {
 
 function graphvizEdgesOfObject(obj, knownUids, inPortOfUid) {
   const srcUid = obj.addr.uid;
-  const config = configOfConstr[obj.constr]["args"];
+  const argsConfig = renderConfig["constr"][obj.constr]["args"];
 
   return obj.args
     .map((arg, argIdx) => {
-      const c = config[argIdx];
+      const config = argsConfig[argIdx];
       const dstUid = arg.uid;
       const dstInPort = inPortOfUid[dstUid] || [];
-      return knownUids.has(dstUid) || c["isPointer"] // This field is a pointer
+      return knownUids.has(dstUid) || config["isPointer"] // This field is a pointer
         ? new GraphvizEdge(
-            [srcUid, ...c["outPorts"], ...[c["inTable"] ? "c" : "e"]],
+            [srcUid, ...config["outPorts"], ...[config["inTable"] ? "c" : "e"]],
             [dstUid, ...dstInPort, "w"],
           )
         : null;
@@ -187,11 +182,12 @@ function graphvizPointersOfObject(obj, inPortOfUid, hasIncomingEdges) {
 }
 
 function graphvizInputPortsOfConstr(constr) {
-  if (!(constr in configOfConstr)) {
+  const constrConfig = renderConfig["constr"];
+  if (!(constr in constrConfig)) {
     console.error("Unrecognized structure:", constr);
     return [];
   }
-  return configOfConstr[constr]["inPorts"];
+  return constrConfig[constr]["inPorts"];
 }
 
 class XMLContainer {
@@ -262,19 +258,19 @@ function graphvizLabelOfObject(obj, knownUids) {
   const valueOrPointer = (inPort, outPort, v) =>
     knownUids.has(v.uid) ? pointer(inPort, outPort, v) : value(inPort, v);
 
-  const config = configOfConstr[obj.constr];
+  const objConfig = renderConfig["constr"][obj.constr];
   return table(
     {
-      cellborder: config["isFlat"] ? 1 : 0,
+      cellborder: objConfig["isFlat"] ? 1 : 0,
     },
     header,
     ...obj.args
       .map((arg, argIdx) => {
-        const c = config["args"][argIdx];
-        return c["inTable"]
-          ? knownUids.has(arg.uid) || c["isPointer"]
-            ? valueOrPointer(c["inPorts"][0], c["outPorts"][0], arg)
-            : value(c["inPorts"], arg)
+        const config = objConfig["args"][argIdx];
+        return config["inTable"]
+          ? knownUids.has(arg.uid) || config["isPointer"]
+            ? valueOrPointer(config["inPorts"][0], config["outPorts"][0], arg)
+            : value(config["inPorts"], arg)
           : null;
       })
       .filter(Boolean),
@@ -598,8 +594,15 @@ function markFreshStarts() {
   });
 }
 
-function init() {
+async function init() {
   markFreshStarts();
+  const renderConfig = await loadRenderConfig();
+  Object.defineProperty(window, "renderConfig", {
+    value: renderConfig,
+    writable: false,
+    configurable: false,
+    enumerable: true,
+  });
   renderEmbedded();
   observeAlectryonTarget();
 }
