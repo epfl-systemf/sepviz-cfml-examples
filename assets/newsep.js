@@ -661,10 +661,11 @@ function markFreshStarts() {
 
   document.querySelectorAll(".alectryon-sentence").forEach((sentenceNode) => {
     const inputNode = sentenceNode.querySelector(".alectryon-input");
+    const firstNode = inputNode.firstChild;
     const token =
-      inputNode.childElementCount > 0
-        ? inputNode.childNodes[0].innerText
-        : inputNode.innerText;
+      firstNode && firstNode.nodeType === Node.TEXT_NODE
+        ? firstNode.textContent.trim()
+        : firstNode.innerText;
     if (startingTokens.includes(token))
       sentenceNode.classList.add("sep-fresh-start");
   });
