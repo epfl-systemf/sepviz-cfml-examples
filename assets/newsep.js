@@ -486,10 +486,6 @@ function renderEmbedded() {
 
   function next(isFreshStart, isPreCond) {
     const vid = `vid${genVid++}`;
-    if (isFreshStart) {
-      lastPreVid = null;
-      lastPostVid = null;
-    }
     lastVid[vid] = isPreCond ? lastPreVid : lastPostVid;
     if (isPreCond) lastPreVid = vid;
     else lastPostVid = vid;
@@ -500,6 +496,10 @@ function renderEmbedded() {
     .querySelectorAll(".alectryon-sentence:has(.goal-conclusion)")
     .forEach((sentenceNode) => {
       const isFreshStart = sentenceNode.classList.contains("sep-fresh-start");
+      if (isFreshStart) {
+        lastPreVid = null;
+        lastPostVid = null;
+      }
       const goalNode = sentenceNode.querySelector(".goal-conclusion");
       const parseResult = parse(goalNode.innerText);
       goalNode.innerText = "";
