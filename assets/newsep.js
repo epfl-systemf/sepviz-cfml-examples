@@ -432,7 +432,9 @@ function graphvizDiagramComponents(objects) {
     },
   ];
 
-  return [...props, ...nodes, ...edges];
+  // Reverse node order to flip Graphviz’s Y-axis, in order to visually display
+  // the objects in top-to-bottom order.
+  return [...props, ...nodes.reverse(), ...edges];
 }
 
 function graphvizRenderText(components) {
