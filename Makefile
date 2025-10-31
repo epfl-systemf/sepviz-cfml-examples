@@ -21,7 +21,7 @@ JS_FILES := newsep.js parser.js
 
 .PHONY: default prepare tlc install-tlc cfml install-cfml clean-web clean
 
-default: $(HTML_FILES) $(addprefix $(BUILD_DIR)/, $(JS_FILES)) $(BUILD_DIR)/sep.css $(BUILD_DIR)/render_config.json
+default: $(HTML_FILES) $(addprefix $(BUILD_DIR)/, $(JS_FILES)) $(BUILD_DIR)/sep.css $(BUILD_DIR)/render_config.yml
 prepare: install-cfml
 
 tlc:

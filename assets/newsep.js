@@ -4,10 +4,10 @@ import * as SepParser from "./parser.js";
 document.addEventListener("DOMContentLoaded", init);
 
 async function loadRenderConfig() {
-  const response = await fetch("./render_config.json");
+  const response = await fetch("./render_config.yml");
   if (!response.ok)
     throw new Error(`Failed to load config: ${response.status}`);
-  const config = await response.json();
+  const config = jsyaml.load(await response.text());
   return config;
 }
 
@@ -122,12 +122,6 @@ function renderPurePredicates(purePredicates) {
   return host;
 }
 
-var SepFontInfo = {
-  name: "Iosevka",
-  size: 12, // 12: 6.875; 11.5: 5.6:
-  charwidth: 6.075, // FIXME not reliable enough.  Recompile graphviz?
-};
-
 class GraphvizNode {
   constructor(name, label, otherProps = {}) {
     this.name = name;
@@ -235,7 +229,7 @@ function graphvizLabelOfObject(obj, knownUids) {
       ? v.label == "null"
         ? "∅"
         : v.label
-      : font({ color: "#3465a4" }, v.label);
+      : font({ color: renderConfig["font"]["existVarColor"] }, v.label);
   };
 
   const header = tr(
@@ -318,40 +312,10 @@ function graphvizDiagramComponents(objects) {
 
   // NOTE: https://graphviz.org/doc/info/attrs.html#a:sortv explains how packmode can be used to preserve the order of the clusters
   // NOTE: Add one graph per connected component, use HTML+CSS do the layout as inline-blocks (see ccomps)?
-  const props = [
-    {
-      target: "graph",
-      props: {
-        rankdir: "LR",
-        ranksep: 0.05,
-        nodesep: 0.2,
-        concentrate: false,
-        splines: true,
-        packmode: "array",
-        truecolor: true,
-        bgcolor: "#00000000",
-        pad: 0,
-      },
-    },
-    {
-      target: "edge",
-      props: {
-        fontname: SepFontInfo.name,
-        tailclip: false,
-        arrowsize: 0.5,
-        minlen: 3,
-      },
-    },
-    {
-      target: "node",
-      props: {
-        shape: "plaintext",
-        margin: 0.05,
-        fontsize: SepFontInfo.size,
-        fontname: SepFontInfo.name,
-      },
-    },
-  ];
+  const props = ["graph", "edge", "node"].map((target) => ({
+    target,
+    props: renderConfig[target],
+  }));
 
   // Reverse node order to flip Graphviz’s Y-axis, in order to visually display
   // the objects in top-to-bottom order.
