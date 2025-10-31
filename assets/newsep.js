@@ -366,9 +366,6 @@ function graphvizRenderText(components) {
   return ["digraph {", ...components.map(renderOne), "}"].join("\n");
 }
 
-const lastVid = {};
-const dots = {};
-
 function renderHeapObjectsInOneDiagram(objects, vid) {
   const diagramComponents = graphvizDiagramComponents(objects);
   const dot = graphvizRenderText(diagramComponents);
@@ -376,7 +373,6 @@ function renderHeapObjectsInOneDiagram(objects, vid) {
     text: dot,
     attrs: null,
   });
-  dots[vid] = dot;
   const svgNode = createElement("div", ["sep-diagram-svg"]);
 
   // Call `dot` then `render` instead of `renderDot` to do the computational
@@ -407,50 +403,51 @@ function renderGoalParseUnit(host, parseUnit) {
     host.id,
   );
 
-  function hide(node) {
-    node.classList.add("hidden");
-  }
-
-  function show(node) {
-    node.classList.remove("hidden");
-  }
+  const hide = (node) => node.classList.add("hidden");
+  const show = (node) => node.classList.remove("hidden");
 
   // default
-  diagramView.replaceChildren(
-    ...[purePredsNode, dotNode, svgNode].filter(Boolean),
-  );
+  host.append(srcView, diagramView);
+  diagramView.append(...[purePredsNode, dotNode, svgNode].filter(Boolean));
+  hide(srcView);
   hide(dotNode);
-  host.replaceChildren(diagramView);
 
   // interaction
-  // TODO: revise
-  srcView.onclick = () => {
-    host.replaceChildren(diagramView);
+  const toggleSrcView = () => {
+    show(srcView);
+    hide(diagramView);
   };
-  if (purePredsNode)
-    purePredsNode.onclick = () => {
-      host.replaceChildren(srcView);
-    };
-  svgNode.onclick = () => {
-    show(dotNode);
-    hide(svgNode);
+  const toggleDiagramView = () => {
+    hide(srcView);
+    show(diagramView);
   };
-  dotNode.onclick = () => {
+  const toggleSvg = () => {
     show(svgNode);
     hide(dotNode);
-    host.replaceChildren(srcView);
+  };
+  const toggleDot = () => {
+    hide(svgNode);
+    show(dotNode);
+  };
+  srcView.onclick = toggleDiagramView;
+  if (purePredsNode) purePredsNode.onclick = toggleSrcView;
+  svgNode.onclick = toggleDot;
+  dotNode.onclick = () => {
+    toggleSvg();
+    toggleSrcView();
   };
 }
 
 // TODO: besides "goal-conclusion", handle classes "coq-message" and "goal-hyp" as well.
 function renderEmbedded() {
+  const lastVidMap = {};
   let genVid = 0,
     lastPreVid = null,
     lastPostVid = null;
 
   function next(isFreshStart, isPreCond) {
     const vid = `vid${genVid++}`;
-    lastVid[vid] = isPreCond ? lastPreVid : lastPostVid;
+    lastVidMap[vid] = isPreCond ? lastPreVid : lastPostVid;
     if (isPreCond) lastPreVid = vid;
     else lastPostVid = vid;
     return vid;
@@ -483,42 +480,52 @@ function renderEmbedded() {
         }
       });
     });
+
+  return lastVidMap;
 }
 
-const renderingVids = new Set();
+// Use a MutationObserver to watch the target and animate its transitions.
+function animateAlectryonTarget(lastVidMap) {
+  const renderingVids = new Set();
 
-async function animate(vizNode, duration = 2000) {
-  const vid = vizNode.id;
-  if (renderingVids.has(vid)) return;
-  const last = lastVid[vid];
-  if (!last) return;
+  function getDotByVid(vid) {
+    const node = document.querySelector(`#${vid} .sep-diagram-dot`);
+    return node.innerText;
+  }
 
-  const svgNode = vizNode.querySelector(".sep-diagram-svg");
-  const gviz = svgNode.__graphviz__;
+  async function animate(vizNode, duration = 2000) {
+    const vid = vizNode.id;
+    if (renderingVids.has(vid)) return;
+    const last = lastVidMap[vid];
+    if (!last) return;
 
-  renderingVids.add(vid);
-  // render the previous diagram
-  await new Promise((resolve) => {
-    gviz
-      .transition(function () {
-        return d3.transition().duration(0);
-      })
-      .renderDot(dots[last])
-      .on("end", resolve);
-  });
-  // transit to the current diagram
-  await new Promise((resolve) => {
-    gviz
-      .transition(function () {
-        return d3.transition().duration(duration).ease(d3.easeCubicInOut);
-      })
-      .renderDot(dots[vid])
-      .on("end", resolve);
-  });
-  renderingVids.delete(vid);
-}
+    const svgNode = vizNode.querySelector(".sep-diagram-svg");
+    const gviz = svgNode.__graphviz__;
+    const dotNode = vizNode.querySelector(".sep-diagram-dot");
+    const dot = dotNode.innerText;
 
-function observeAlectryonTarget() {
+    renderingVids.add(vid);
+    // render the previous diagram
+    await new Promise((resolve) => {
+      gviz
+        .transition(function () {
+          return d3.transition().duration(0);
+        })
+        .renderDot(getDotByVid(last))
+        .on("end", resolve);
+    });
+    // transit to the current diagram
+    await new Promise((resolve) => {
+      gviz
+        .transition(function () {
+          return d3.transition().duration(duration).ease(d3.easeCubicInOut);
+        })
+        .renderDot(dot)
+        .on("end", resolve);
+    });
+    renderingVids.delete(vid);
+  }
+
   function animateDiagramsInSentence(sentenceNode) {
     sentenceNode.querySelectorAll(".sep-visualization").forEach((vizNode) => {
       animate(vizNode);
@@ -567,6 +574,6 @@ async function init() {
     configurable: false,
     enumerable: true,
   });
-  renderEmbedded();
-  observeAlectryonTarget();
+  const lastVidMap = renderEmbedded();
+  animateAlectryonTarget(lastVidMap);
 }
