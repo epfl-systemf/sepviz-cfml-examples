@@ -11,7 +11,7 @@ async function loadRenderConfig() {
   return config;
 }
 
-function parseHeapPredicate(hpred) {
+function resolveSymbols(hpred) {
   let objects = [];
   let purePredicates = [];
   let gensym = {};
@@ -67,29 +67,6 @@ function parseHeapPredicate(hpred) {
 
   loop(hpred, new Map());
   return { objects: objects, purePredicates: purePredicates };
-}
-
-function parse(term) {
-  let string = [],
-    stack = [];
-  var res;
-  SepParser.parse(term).forEach((x) => {
-    if (typeof x === "object" && "raw" in x) {
-      stack.push(string.join(""));
-      res = parseHeapPredicate(x.parsed);
-      stack.push({
-        raw: x.raw,
-        objects: res.objects,
-        purePredicates: res.purePredicates,
-        position: x.position,
-      });
-      string = [];
-    } else {
-      string.push(x);
-    }
-  });
-  stack.push(string.join(""));
-  return stack;
 }
 
 // Create DOM element with class and optional text/attrs.
@@ -450,7 +427,8 @@ function renderEmbedded() {
     .querySelectorAll(".alectryon-sentence:has(.goal-conclusion)")
     .forEach((sentenceNode) => {
       const goalNode = sentenceNode.querySelector(".goal-conclusion");
-      const parseResult = parse(goalNode.innerText);
+      const parseResult = SepParser.parse(goalNode.innerText)
+        .map((t) => (typeof t == "object")? { ...t, ...resolveSymbols(t.parsed) }: t);
       goalNode.innerText = "";
       parseResult.forEach((parseUnit) => {
         if (typeof parseUnit === "object") {

@@ -1,6 +1,19 @@
 Goal
   = ts:(NotatedTriple / PlainTriple / Implication / DefaultTop / cruft)* {
-  return ts.flat();
+  let toJoin = [], joineds = [];
+  ts.flat().forEach((t) => {
+    if (typeof t === "object") {
+      if (toJoin.length) {
+        joineds.push(toJoin.join(""));
+        toJoin = [];
+      }
+      joineds.push(t);
+    } else {
+      toJoin.push(t);
+    }
+  });
+  if (toJoin.length) joineds.push(toJoin.join(""));
+  return joineds;
 }
 
 cruft
