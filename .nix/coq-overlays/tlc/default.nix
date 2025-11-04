@@ -1,12 +1,14 @@
 {
   lib,
-  mkCoqDerivation,
   which,
-  coq,
+  coqPackages,
   version ? null,
 }:
 
 with lib;
+let
+  inherit (coqPackages) mkCoqDerivation coq;
+in
 mkCoqDerivation {
   pname = "tlc";
   repo = "tlc";

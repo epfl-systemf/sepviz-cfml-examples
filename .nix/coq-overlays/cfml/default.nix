@@ -1,13 +1,16 @@
 {
   lib,
-  mkCoqDerivation,
   which,
-  coq,
   bash,
   coq-tlc,
+  coqPackages,
+  ...
 }:
 
 with lib;
+let
+  inherit (coqPackages) mkCoqDerivation coq;
+in
 mkCoqDerivation {
   pname = "cfml";
   # owner = "charguer";
@@ -30,15 +33,16 @@ mkCoqDerivation {
   # src = ~/Repos/cfml;
 
   buildInputs = [ bash ];
-  propagatedBuildInputs =
-    [ coq-tlc ]
-    ++ (with coq.ocamlPackages; [
-      ocaml
-      dune_3
-      findlib # Note: [findlib] is necessary for [dune] to find [pprint].
-      pprint
-      menhir
-    ]);
+  propagatedBuildInputs = [
+    coq-tlc
+  ]
+  ++ (with coq.ocamlPackages; [
+    ocaml
+    dune_3
+    findlib # Note: [findlib] is necessary for [dune] to find [pprint].
+    pprint
+    menhir
+  ]);
 
   # Sometimes the shebang line (#!/usr/bin/env bash) might not be correctly
   # interpreted in the Nix environment. Use patchShebangs to ensure that the

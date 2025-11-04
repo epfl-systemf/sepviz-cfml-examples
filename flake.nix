@@ -22,14 +22,12 @@
         system:
         let
           coq-overlay = final: prev: {
-            coq-tlc = import ./.nix/coq-overlays/tlc {
-              inherit (final) lib which;
-              inherit (final.coqPackages) mkCoqDerivation coq;
+            coq-tlc = final.callPackage ./.nix/coq-overlays/tlc {
+              coqPackages = final.coqPackages;
             };
-            coq-cfml = import ./.nix/coq-overlays/cfml {
-              inherit (final) lib which;
-              inherit (final) bash coq-tlc;
-              inherit (final.coqPackages) mkCoqDerivation coq;
+            coq-cfml = final.callPackage ./.nix/coq-overlays/cfml {
+              coq-tlc = final.coq-tlc;
+              coqPackages = final.coqPackages;
             };
           };
           pkgs = import nixpkgs {
