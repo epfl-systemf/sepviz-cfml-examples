@@ -362,17 +362,29 @@ export class DotBuilder {
       )
     );
 
-    function value(port: string[], sym: Symbol): XMLElement {
-      return tr({}, td({ port: port.join(':'), colspan: 2 }, label(sym)));
-    }
-
-    function pointer(inPort: string, outPort: string, ptr: Symbol): XMLElement {
+    /** See: https://github.com/magjac/d3-graphviz#maintaining-object-constancy
+     * To keep Graphviz’s auto-generated tag indices stable (for smooth
+     * transitions), value fields and pointer fields must have the same table
+     * shape.
+     */
+    function constrField(
+      port0: string,
+      s0: XMLChild,
+      port1: string | null,
+      s1: string
+    ): XMLElement {
       return tr(
         {},
-        td({ port: inPort, sides: 'tlb' }, label(ptr)),
-        td({ port: outPort, sides: 'trb' }, '⏺')
+        td({ port: port0, sides: 'tlb' }, s0),
+        td(port1 ? { port: port1, sides: 'trb' } : { sides: 'trb' }, s1)
       );
     }
+
+    const value = (port: string, sym: Symbol) =>
+      constrField(port, label(sym), null, '');
+
+    const pointer = (inPort: string, outPort: string, sym: Symbol) =>
+      constrField(inPort, label(sym), outPort, '⏺');
 
     const constrConfig = this.getConstrConfig(hpred.obj.constr);
     return table(
@@ -384,7 +396,7 @@ export class DotBuilder {
         return [
           this.knownPtrUids.has(arg.uid) || config.isPointer
             ? pointer(config.inPorts[0], config.outPorts[0], arg)
-            : value(config.inPorts, arg),
+            : value(config.inPorts[0], arg),
         ];
       })
     );
