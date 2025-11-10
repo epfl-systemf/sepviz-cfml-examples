@@ -1,0 +1,41 @@
+:root {
+  --small-space: 0.5em;
+  --border-color: black;
+  --border-radius: 4px;
+  --predicate-gap: 1em;
+}
+
+.sep-pure-predicate-container {
+  border: 1px dotted var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--small-space);
+  display: flex;
+  wrap: nowrap;
+  gap: var(--predicate-gap);
+}
+
+.sep-pure-predicate {
+  border-radius: var(--border-radius);
+  background: #d3e9f0;
+  white-space: nowrap;
+}
+
+.sep-exist-var {
+  color: #3465a4;
+}
+
+.sep-diagram {
+  border: 1px solid gray;
+  border-radius: var(--border-radius);
+  padding: var(--small-space);
+}
+
+.sep-diagram-svg svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.hidden {
+  display: none;
+}

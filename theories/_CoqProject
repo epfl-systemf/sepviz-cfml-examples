@@ -1,7 +1,0 @@
--R . SepDiagram
-
-lib/WPUntyped.v
-lib/Notations.v
-lib/ListNull.v
-examples/LiterateQueue.v
-examples/LiterateTree.v
