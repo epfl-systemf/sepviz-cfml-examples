@@ -9,7 +9,7 @@ graph:
   nodesep: 0.2
   concentrate: false
   splines: true
-  packmode: array
+  packmode: array_i # respect input order
   truecolor: true
   bgcolor: '#00000000'
   pad: 0

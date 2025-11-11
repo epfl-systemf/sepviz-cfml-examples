@@ -80,3 +80,75 @@ export function createElement(
   if (options.id) node.id = options.id;
   return node;
 }
+
+/** Graph algorithms */
+
+type GraphNode = string | number | symbol;
+
+export interface GraphEdge {
+  src: GraphNode;
+  dst: GraphNode;
+}
+
+export interface GraphNodeState {
+  inStack: boolean;
+  visited: boolean;
+  longestDist: number;
+  preEdgeIdx: number;
+}
+
+export type GraphState = Record<GraphNode, GraphNodeState>;
+
+/**
+ * DFS for cycle detection.
+ * Side effect: updates longest-distance and predecessor info for each node.
+ */
+function isCircleDfs(
+  cur: GraphNode,
+  edges: GraphEdge[],
+  s: GraphState
+): boolean {
+  if (s[cur].inStack) return true;
+  if (s[cur].visited) return false;
+  s[cur].inStack = true;
+  s[cur].visited = true;
+  for (const [i, e] of edges.entries()) {
+    if (e.src !== cur) continue;
+    if (s[cur].longestDist + 1 > s[e.dst].longestDist) {
+      s[e.dst].longestDist = s[cur].longestDist + 1;
+      s[e.dst].preEdgeIdx = i;
+    }
+    if (isCircleDfs(e.dst, edges, s)) return true;
+  }
+  s[cur].inStack = false;
+  return false;
+}
+
+/**
+ * Return `[true, {}]` if there is a circle in the graph.
+ * Otherwise, return `[false, s]` where `s: GraphState` holds the longest
+ * distance information for each node.
+ */
+export function findCircleAndLongestDist(
+  edges: GraphEdge[]
+): [boolean, GraphState] {
+  const nodes: GraphNode[] = [...new Set(edges.flatMap((e) => [e.src, e.dst]))];
+  const s: GraphState = {};
+  const isRoot: Record<GraphNode, boolean> = {};
+  nodes.forEach((n) => {
+    isRoot[n] = true;
+    s[n] = { visited: false, inStack: false, longestDist: -1, preEdgeIdx: -1 };
+  });
+  edges.forEach((e) => {
+    isRoot[e.dst] = false;
+  });
+  for (const n of nodes.filter((n) => isRoot[n])) {
+    s[n].longestDist = 0;
+    if (isCircleDfs(n, edges, s)) return [true, {}];
+  }
+  // If there is still any unvisited node, it must be inside a circle.
+  for (const n of nodes) {
+    if (!s[n].visited) return [true, {}];
+  }
+  return [false, s];
+}

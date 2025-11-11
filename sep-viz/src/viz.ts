@@ -14,6 +14,8 @@ import {
   ConstrConfig,
   CompleteArgConfig,
   RenderConfig,
+  GraphEdge,
+  findCircleAndLongestDist,
 } from './utility';
 
 type Uid = string;
@@ -146,6 +148,7 @@ class DotNode {
 }
 
 class DotEdge {
+  public rank: number;
   constructor(
     public readonly srcUid: Uid,
     public readonly srcOurPorts: string[],
@@ -153,6 +156,7 @@ class DotEdge {
     public readonly dstInPorts: string[],
     public readonly attrs: Attrs = {}
   ) {
+    this.rank = 0;
     this.srcUid = srcUid;
     this.srcOurPorts = srcOurPorts;
     this.dstUid = dstUid;
@@ -169,6 +173,12 @@ class DotTarget {
     this.name = name;
     this.attrs = attrs;
   }
+}
+
+interface DotCluster {
+  root: Uid;
+  nodes: DotNode[];
+  edges: DotEdge[];
 }
 
 // TODO: rename RenderConfig to DotConfig ?
@@ -194,7 +204,7 @@ export class DotBuilder {
     return this.buildText(...this.buildComponents());
   }
 
-  protected buildComponents(): [DotNode[], DotEdge[], DotTarget[]] {
+  protected buildComponents(): [DotCluster[], DotTarget[]] {
     const nodes: DotNode[] = this.heapPredicates.map(
       (hpred) => new DotNode(hpred.addr.uid, this.buildNodeLabel(hpred))
     );
@@ -229,14 +239,89 @@ export class DotBuilder {
       new DotTarget('edge', this.config.edge),
     ];
 
-    return [nodes, edges, targets];
+    const clusters = this.partition(nodes, edges);
+    return [clusters, targets];
   }
 
-  protected buildText(
-    nodes: DotNode[],
-    edges: DotEdge[],
-    targets: DotTarget[]
-  ): string {
+  // Run a union-find to cluster the graph into weakly connected components.
+  protected partition(nodes: DotNode[], edges: DotEdge[]): DotCluster[] {
+    let parents: Record<Uid, Uid> = {};
+    nodes.forEach((n) => (parents[n.uid] = n.uid));
+
+    function find(uid: Uid): Uid {
+      let parent = parents[uid];
+      return uid == parent ? parent : (parents[uid] = find(parent));
+    }
+
+    function union(src: Uid, dst: Uid): void {
+      // LATER: Add a size heuristic if this is too slow
+      parents[find(dst)] = find(src);
+    }
+
+    edges.forEach((edge) => union(edge.srcUid, edge.dstUid));
+
+    const clusters: Record<Uid, DotCluster> = {};
+    Object.keys(parents).forEach((uid: Uid) => {
+      const root = find(uid);
+      if (!(root in clusters))
+        clusters[root] = { root: root, nodes: [], edges: [] };
+    });
+    nodes.forEach((n) => clusters[find(n.uid)].nodes.push(n));
+    edges.forEach((e) => clusters[find(e.srcUid)].edges.push(e));
+
+    return Object.values(clusters)
+      .sort((c1, c2) => c2.root.localeCompare(c1.root))
+      .map((c) => this.sortInsideCluster(c));
+  }
+
+  // Example:
+  //   a -> b -> c; d -> c; a -> c;
+  //  Annotated with longest dist (`=>` are the edges in the longest dist tree):
+  //   a (2) => b (1) => c (0)
+  //   d (1) => c (0)
+  //   a (2) -> c (0)
+  //  Output dot edge order should be:
+  //   first, 1 -> 0 edges:
+  //     b -> c; d -> c;
+  //   then, 2 -> 1 edges:
+  //     a -> b
+  //   lastly, other edges:
+  //     a -> c
+  protected sortInsideCluster(cluster: DotCluster): DotCluster {
+    const revEdges: GraphEdge[] = cluster.edges.map((e) => {
+      return { src: e.dstUid, dst: e.srcUid };
+    });
+    const [hasCircle, graphState] = findCircleAndLongestDist(revEdges);
+    // TODO: may use strongly connected components to perform condensation when
+    // there are circles.
+    if (hasCircle) {
+      console.log('[viz] This cluster has a circle.');
+      return cluster;
+    }
+
+    // TODO: ranking: is it a stable solution?
+    const inf = cluster.nodes.length; // rank in [0, nodes.length - 1]
+    cluster.edges.forEach((e) => {
+      e.rank = inf; // Edges not in the longest paths should be drawn last.
+    });
+    Object.entries(graphState).forEach(([_, s]) => {
+      const idx = s.preEdgeIdx;
+      if (idx !== -1) cluster.edges[idx].rank = s.longestDist - 1;
+    });
+
+    // Sort all edges and nodes.
+    function edgeToString(e: DotEdge): string {
+      return [e.srcUid, ...e.srcOurPorts, e.dstUid, ...e.dstInPorts].join();
+    }
+    cluster.edges.sort((e1, e2) => {
+      if (e1.rank !== e2.rank) return e1.rank - e2.rank;
+      return edgeToString(e1).localeCompare(edgeToString(e2));
+    });
+    cluster.nodes.sort((n1, n2) => n1.uid.localeCompare(n2.uid));
+    return cluster;
+  }
+
+  protected buildText(clusters: DotCluster[], targets: DotTarget[]): string {
     const renderXMLAttr = (k: AttrKey, v: AttrValue) =>
       v === null ? '' : ` ${k}="${v}"`;
 
@@ -287,11 +372,16 @@ export class DotBuilder {
       return `${target.name} ${renderAttrs(target.attrs)}`;
     };
 
+    // Edges should go before nodes to make sure all nodes are first mentioned
+    // in respect to the order of edges.
+    const clusterTexts: string[] = clusters.map((c) =>
+      [...c.edges.map(renderEdge), ...c.nodes.map(renderNode)].join('\n')
+    );
+
     return [
       'digraph {',
       ...targets.map(renderTarget),
-      ...nodes.map(renderNode),
-      ...edges.map(renderEdge),
+      ...clusterTexts,
       '}',
     ].join('\n');
   }
