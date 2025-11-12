@@ -54,26 +54,31 @@ function renderEmbedded(config: RenderConfig): Record<Vid, Vid> {
     return vid;
   }
 
+  // TODO: handle classes "coq-message" and "goal-hyp" as well.
   document
     .querySelectorAll<ExtHTMLElement>(
       '.alectryon-sentence:has(.goal-conclusion)'
     )
     .forEach((sentenceNode) => {
-      const goalNode =
-        sentenceNode.querySelector<HTMLElement>('.goal-conclusion');
-      if (!goalNode) return;
-      const parseResult = parse(goalNode.innerText);
-      goalNode.innerText = '';
-      parseResult.forEach((unit: HeapState | string) => {
-        if (typeof unit === 'string') {
-          goalNode.append(unit);
-        } else {
-          const vid = nextVid(sentenceNode.goalReset, unit.position);
-          const host = createElement('div', ['sep-visualization'], { id: vid });
-          goalNode.append(host);
-          renderHeapState(config, host, unit);
-        }
-      });
+      sentenceNode
+        .querySelectorAll<HTMLElement>('.goal-conclusion')
+        .forEach((goalNode, idx) => {
+          const parseResult = parse(goalNode.innerText);
+          goalNode.innerText = '';
+          parseResult.forEach((unit: HeapState | string) => {
+            if (typeof unit === 'string') {
+              goalNode.append(unit);
+            } else {
+              const host = createElement('div', ['sep-visualization']);
+              if (idx === 0) {
+                // Only animate the first goal.
+                host.id = nextVid(sentenceNode.goalReset, unit.position);
+              }
+              goalNode.append(host);
+              renderHeapState(config, host, unit);
+            }
+          });
+        });
     });
 
   return previousVids;
