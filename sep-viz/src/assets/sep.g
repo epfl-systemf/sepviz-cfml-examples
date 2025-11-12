@@ -138,9 +138,9 @@ Atom = name / operator / $ParenthesizedAtom
 ParenthesizedAtom
   = "(" _ (unsafe / ParenthesizedAtom _)* ")"
 
-name = $[A-Za-z0-9\']+
+name = $[A-Za-z0-9_\']+
 
-operator = $("<>" / "=")
+operator = $("<>" / "=" / "<->")
 
 unsafe = $[^()]+
 

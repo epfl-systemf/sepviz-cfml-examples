@@ -50,7 +50,7 @@ function renderEmbedded(config: RenderConfig): Record<Vid, Vid> {
   function nextVid(isResetGoal: boolean | undefined, stream: string): Vid {
     const latest = latestVids[stream];
     const vid = vidOf(++latestVids[stream], stream);
-    if (!isResetGoal) previousVids[vid] = vidOf(latest, stream);
+    if (!isResetGoal && latest !== 0) previousVids[vid] = vidOf(latest, stream);
     return vid;
   }
 
@@ -96,6 +96,7 @@ function renderHeapState(
   const diagramView = createElement('div', ['sep-diagram']);
   const purePredsNode = renderPurePredicates(state.purePredicates);
 
+  // TODO: handle empty heapPredicates
   const dotNode = createElement('div', ['sep-diagram-dot']);
   const dotCopy = createElement('button', ['copy-button'], { text: 'Copy' });
   dotNode.append(dotCopy);

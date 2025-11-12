@@ -44,6 +44,12 @@
   z-index: 10;
 }
 
+/* NOTE: Use Courier 11 in graphviz and override display with Iosevka 12. */
+.sep-diagram-svg text {
+  font-family: 'Iosevka';
+  font-size: 12px;
+}
+
 .hidden {
   display: none;
 }
