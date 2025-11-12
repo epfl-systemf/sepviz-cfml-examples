@@ -1,14 +1,1 @@
-# COQ
-*.vo
-*.vok
-*.vos
-*.vio
-*.glob
-.*.aux
-.lia.cache
-
-# direnv
-.direnv
-
-# build directory
-_build/
+**/.direnv

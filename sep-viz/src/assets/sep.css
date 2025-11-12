@@ -1,0 +1,55 @@
+:root {
+  --small-space: 0.5em;
+  --border-color: black;
+  --border-radius: 4px;
+  --predicate-gap: 1em;
+}
+
+.sep-pure-predicate-container {
+  border: 1px dotted var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--small-space);
+  display: flex;
+  wrap: nowrap;
+  gap: var(--predicate-gap);
+}
+
+.sep-pure-predicate {
+  border-radius: var(--border-radius);
+  background: #d3e9f0;
+  white-space: nowrap;
+}
+
+.sep-exist-var {
+  color: #3465a4;
+}
+
+.sep-diagram {
+  border: 1px solid gray;
+  border-radius: var(--border-radius);
+  padding: var(--small-space);
+}
+
+.sep-diagram-dot {
+  position: relative;
+}
+
+.sep-diagram-dot .copy-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 12px;
+  z-index: 10;
+}
+
+/* NOTE: Use Courier 11 in graphviz and override display with Iosevka 12. */
+.sep-diagram-svg text {
+  font-family: 'Iosevka';
+  font-size: 12px;
+}
+
+.hidden {
+  display: none;
+}
