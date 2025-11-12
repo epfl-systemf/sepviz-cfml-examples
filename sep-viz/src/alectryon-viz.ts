@@ -93,74 +93,59 @@ function renderHeapState(
   host: HTMLElement,
   state: HeapState
 ) {
-  const srcView = createElement('div', ['sep-source'], { text: state.raw });
-  const diagramView = createElement('div', ['sep-diagram']);
-  const purePredsNode = renderPurePredicates(state.purePredicates);
-
-  // TODO: handle empty heapPredicates
-  const dotNode = createElement('div', ['sep-diagram-dot']);
-  const dotCopy = createElement('button', ['copy-button'], { text: 'Copy' });
-  dotNode.append(dotCopy);
-  const dot = new DotBuilder(config, state.heapPredicates).build();
-  const dotContent = createElement('div', ['content'], { text: dot });
-  dotNode.append(dotContent);
-
-  const svgNode = createElement('div', ['sep-diagram-svg']);
-  // Call `dot` then `render` instead of `renderDot` to do the computational
-  // intensive layout stages for graphs before doing the potentially
-  // synchronized rendering of all the graphs simultaneously.
-  d3.select(svgNode).graphviz(GraphvizOptions).dot(dot).render();
-
   const hide = (node: HTMLElement) => node.classList.add('hidden');
   const show = (node: HTMLElement) => node.classList.remove('hidden');
-
-  // default
-  host.append(srcView, diagramView);
-  if (purePredsNode) diagramView.append(purePredsNode);
-  diagramView.append(dotNode, svgNode);
-  hide(srcView);
-  hide(dotNode);
-
-  // interaction
-  const toggleSrcView = () => {
-    show(srcView);
-    hide(diagramView);
+  const toggle = (toShow: HTMLElement, toHide: HTMLElement) => {
+    show(toShow);
+    hide(toHide);
   };
-  const toggleDiagramView = () => {
-    hide(srcView);
-    show(diagramView);
-  };
-  const toggleSvg = () => {
-    show(svgNode);
+
+  const srcView = createElement('div', ['sep-source'], { text: state.raw });
+  const diagramView = createElement('div', ['sep-diagram']);
+  host.append(diagramView, srcView);
+  hide(srcView); // default: diagram view
+  srcView.addEventListener('click', () => toggle(diagramView, srcView));
+
+  if (state.purePredicates.length > 0) {
+    const purePredsNode = renderPurePredicates(state.purePredicates);
+    diagramView.append(purePredsNode);
+    purePredsNode.addEventListener('click', () => toggle(srcView, diagramView));
+  }
+
+  if (state.heapPredicates.length > 0) {
+    const dotNode = createElement('div', ['sep-diagram-dot']);
+    const dotCopy = createElement('button', ['copy-button'], { text: 'Copy' });
+    const dot = new DotBuilder(config, state.heapPredicates).build();
+    const dotContent = createElement('div', ['content'], { text: dot });
+    dotNode.append(dotCopy, dotContent);
+
+    const svgNode = createElement('div', ['sep-diagram-svg']);
+    // Call `dot` then `render` instead of `renderDot` to do the computational
+    // intensive layout stages for graphs before doing the potentially
+    // synchronized rendering of all the graphs simultaneously.
+    d3.select(svgNode).graphviz(GraphvizOptions).dot(dot).render();
+
+    diagramView.append(svgNode, dotNode);
     hide(dotNode);
-  };
-  const toggleDot = () => {
-    hide(svgNode);
-    show(dotNode);
-  };
 
-  srcView.addEventListener('click', toggleDiagramView);
-  if (purePredsNode) purePredsNode.addEventListener('click', toggleSrcView);
-  svgNode.addEventListener('click', toggleDot);
-  dotContent.addEventListener('click', () => {
-    toggleSvg();
-    toggleSrcView();
-  });
-  dotCopy.addEventListener('click', () => {
-    navigator.clipboard
-      .writeText(dotContent.textContent)
-      .then(() => {
-        dotCopy.textContent = 'Copied!';
-        setTimeout(() => (dotCopy.textContent = 'Copy'), 800);
-      })
-      .catch((err) => console.error('Copy failed', err));
-  });
+    svgNode.addEventListener('click', () => toggle(dotNode, svgNode));
+    dotContent.addEventListener('click', () => {
+      toggle(svgNode, dotNode);
+      toggle(srcView, diagramView);
+    });
+    dotCopy.addEventListener('click', () => {
+      navigator.clipboard
+        .writeText(dotContent.textContent)
+        .then(() => {
+          dotCopy.textContent = 'Copied!';
+          setTimeout(() => (dotCopy.textContent = 'Copy'), 800);
+        })
+        .catch((err) => console.error('Copy failed', err));
+    });
+  }
 }
 
-function renderPurePredicates(
-  purePredicates: PurePredicate[]
-): HTMLElement | null {
-  if (purePredicates.length == 0) return null;
+function renderPurePredicates(purePredicates: PurePredicate[]): HTMLElement {
   const host = createElement('div', ['sep-pure-predicate-container']);
   purePredicates.forEach((predicate: PurePredicate) => {
     let predicateNode = createElement('div', ['sep-pure-predicate']);
