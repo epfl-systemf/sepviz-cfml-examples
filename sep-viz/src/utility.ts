@@ -2,6 +2,16 @@
 
 import yaml from 'js-yaml';
 
+// See: https://github.com/magjac/d3-graphviz?tab=readme-ov-file#graphviz_keyMode
+// Use 'keyMode: id' to ensure that d3-graphviz treats nodes or edges of the
+// same id as the same object in transitions.
+export const GraphvizOptions = {
+  fit: false,
+  zoom: true,
+  keyMode: 'id',
+  useWorker: false,
+};
+
 export const resetKeywords = [
   'Goal',
   'Lemma',

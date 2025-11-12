@@ -143,7 +143,7 @@ class DotNode {
     otherAttrs: NodeAttrs = {}
   ) {
     this.uid = uid;
-    this.attrs = { label: label, ...otherAttrs };
+    this.attrs = { id: uid, label: label, ...otherAttrs };
   }
 }
 
@@ -161,7 +161,18 @@ class DotEdge {
     this.srcOurPorts = srcOurPorts;
     this.dstUid = dstUid;
     this.dstInPorts = dstInPorts;
-    this.attrs = attrs;
+    /**
+     * In graphviz, an edge is identified by its end points (ignoring middle
+     * ports). For example, edge "p1":"car_out":"c" -> "f1":"car_in":"w" has
+     * auto-generated title "p1:c->f1:w". By default, d3-graphviz uses these
+     * titles to identify nodes and edges.
+     * d3-graphviz allows users to set the key mode to "id" to use user-defined
+     * or auto-generated id for identification. Here, we generated the id using
+     * only `src`, so that when src -> dst0 gets animated to src -> dst1, d3
+     * will make the edge point to dst1 instead of fading out old edge and
+     * fading in the new one.
+     */
+    this.attrs = { id: `${srcUid}-${srcOurPorts.join('-')}`, ...attrs };
   }
 }
 

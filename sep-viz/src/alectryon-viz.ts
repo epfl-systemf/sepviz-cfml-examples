@@ -5,6 +5,7 @@ import {
   loadRenderConfig,
   resetKeywords,
   RenderConfig,
+  GraphvizOptions,
 } from './utility';
 
 import { parse, HeapState, PurePredicate, Symbol, DotBuilder } from './viz';
@@ -108,10 +109,7 @@ function renderHeapState(
   // Call `dot` then `render` instead of `renderDot` to do the computational
   // intensive layout stages for graphs before doing the potentially
   // synchronized rendering of all the graphs simultaneously.
-  d3.select(svgNode)
-    .graphviz({ fit: false, useWorker: false, zoom: true })
-    .dot(dot)
-    .render();
+  d3.select(svgNode).graphviz(GraphvizOptions).dot(dot).render();
 
   const hide = (node: HTMLElement) => node.classList.add('hidden');
   const show = (node: HTMLElement) => node.classList.remove('hidden');

@@ -5,7 +5,7 @@ echo "[gen:proofs] building example proofs with direnv..."
 direnv exec ../example-proofs make -C ../example-proofs
 
 echo "[gen:proofs] removing..."
-find public -mindepth 1 ! -name 'renderConfig.yaml' \
+find public -mindepth 1 ! \( -name 'renderConfig.yaml' -o -name 'test-animation.html' -o -name 'test-animation.js' \) \
     -print -exec rm -rf {} +
 
 echo "[gen:proofs] copying build output to public/"
