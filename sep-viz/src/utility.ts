@@ -12,7 +12,7 @@ export const GraphvizOptions = {
   useWorker: false,
 };
 
-export const resetKeywords = [
+export const ResetKeywords = [
   'Goal',
   'Lemma',
   'Theorem',

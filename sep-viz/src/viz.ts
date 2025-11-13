@@ -149,13 +149,13 @@ class DotNode {
 class DotEdge {
   constructor(
     public readonly srcUid: Uid,
-    public readonly srcOurPorts: string[],
+    public readonly srcOutPorts: string[],
     public readonly dstUid: Uid,
     public readonly dstInPorts: string[],
     public readonly attrs: Attrs = {}
   ) {
     this.srcUid = srcUid;
-    this.srcOurPorts = srcOurPorts;
+    this.srcOutPorts = srcOutPorts;
     this.dstUid = dstUid;
     this.dstInPorts = dstInPorts;
     /**
@@ -169,7 +169,7 @@ class DotEdge {
      * will make the edge point to dst1 instead of fading out old edge and
      * fading in the new one.
      */
-    this.attrs = { id: `${srcUid}-${srcOurPorts.join('-')}`, ...attrs };
+    this.attrs = { id: `${srcUid}-${srcOutPorts.join('-')}`, ...attrs };
   }
 }
 
@@ -285,7 +285,7 @@ export class DotBuilder {
   protected sortInsideCluster(cluster: DotCluster): DotCluster {
     cluster.nodes.sort((n1, n2) => n1.uid.localeCompare(n2.uid));
     const edgeToString = (e: DotEdge) =>
-      [e.srcUid, ...e.srcOurPorts, e.dstUid, ...e.dstInPorts].join();
+      [e.srcUid, ...e.srcOutPorts, e.dstUid, ...e.dstInPorts].join();
     cluster.edges.sort((e1, e2) =>
       edgeToString(e1).localeCompare(edgeToString(e2))
     );
@@ -334,7 +334,7 @@ export class DotBuilder {
       [uid, ...ports].map((a) => `"${a}"`).join(':');
 
     const renderEdge = (edge: DotEdge) => {
-      const src = renderExtremity(edge.srcUid, edge.srcOurPorts);
+      const src = renderExtremity(edge.srcUid, edge.srcOutPorts);
       const dst = renderExtremity(edge.dstUid, edge.dstInPorts);
       return `${src} -> ${dst} ${renderAttrs(edge.attrs)}`;
     };

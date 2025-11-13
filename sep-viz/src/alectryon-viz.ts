@@ -3,7 +3,7 @@ import './assets/sep.css';
 import {
   createElement,
   loadRenderConfig,
-  resetKeywords,
+  ResetKeywords,
   RenderConfig,
   GraphvizOptions,
 } from './utility';
@@ -33,7 +33,7 @@ function markGoalResets() {
     .forEach((n: HTMLElement) => {
       const input = n.querySelector<HTMLElement>('.alectryon-input');
       const firstText = input?.firstChild?.textContent?.trim();
-      if (firstText && resetKeywords.includes(firstText))
+      if (firstText && ResetKeywords.includes(firstText))
         (n as ExtHTMLElement).goalReset = true;
     });
 }
