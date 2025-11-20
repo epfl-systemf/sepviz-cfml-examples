@@ -1,12 +1,13 @@
 import './assets/sep.css';
 
+import { createElement } from './utility';
+
 import {
-  createElement,
   loadRenderConfig,
   ResetKeywords,
   RenderConfig,
   GraphvizOptions,
-} from './utility';
+} from './config';
 
 import { parse, HeapState, PurePredicate, Symbol, DotBuilder } from './viz';
 

@@ -7,6 +7,7 @@
 
 // @ts-ignore
 import { parse as peggyParse } from './parser';
+
 import {
   Attrs,
   AttrKey,
@@ -14,7 +15,7 @@ import {
   ConstrConfig,
   RenderConfig,
   InTablePointerEdgeAttrs,
-} from './utility';
+} from './config';
 
 type Uid = string;
 
