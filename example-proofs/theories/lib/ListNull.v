@@ -1,6 +1,4 @@
-#[warnings="-notation-overridden -ambiguous-paths -notation-incompatible-prefix"]
-From CFML Require Import WPLib.
-Require Import WPUntyped.
+Require Import WPUntyped SepViz_Notations.
 
 Implicit Types (p q: loc).
 

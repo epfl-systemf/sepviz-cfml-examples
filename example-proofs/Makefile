@@ -11,7 +11,7 @@ endif
 LIB := theories/lib
 EXM := theories/examples
 
-VFILES_IN_LIB := WPUntyped.v Notations.v ListNull.v
+VFILES_IN_LIB := SepViz_Notations.v WPUntyped.v ListNull.v
 VFILES_IN_EXM := LiterateQueue.v LiterateTree.v LiterateTest.v
 
 LIB_VFILES := $(addprefix $(LIB)/, $(VFILES_IN_LIB))
@@ -31,9 +31,8 @@ cfml: tlc
 %.vo: %.v
 	$(COQC) $(COQFLAGS) $<
 
-$(LIB)/Notations.vo: $(LIB)/WPUntyped.vo
-
-$(LIB)/ListNull.vo: $(LIB)/Notations.vo
+$(LIB)/WPUntyped.vo: $(LIB)/SepViz_Notations.vo
+$(LIB)/ListNull.vo: $(LIB)/WPUntyped.vo
 
 $(OUT_DIR):
 	mkdir -p $@

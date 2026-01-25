@@ -1,11 +1,16 @@
 {
   "scripts": {
-    "gen:proofs": "./scripts/gen_proofs.sh",
+    "gen:proofs:example": "./scripts/gen_proofs_example.sh",
+    "gen:proofs:lp": "./scripts/gen_proofs_lp.sh",
+    "gen:proofs": "run-s gen:proofs:example gen:proofs:lp",
     "inject": "./scripts/inject.sh",
     "gen:parser": "npx peggy --format es -o src/parser.js src/assets/sep.g",
+
     "prepare": "run-s gen:proofs inject gen:parser",
-    "dev": "npm run prepare && vite",
-    "build": "npm run prepare && vite build",
+
+    "dev": "run-s prepare vite",
+    "vite:build": "vite build",
+    "build": "run-s prepare vite:build",
     "preview": "vite preview",
     "test": "vitest"
   },

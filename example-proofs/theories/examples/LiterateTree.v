@@ -3,7 +3,7 @@
 |*)
 
 #[warnings="-notation-overridden -ambiguous-paths -notation-incompatible-prefix"]
-From SepDiagram.lib Require Import Notations.
+From SepDiagram.lib Require Import WPUntyped.
 
 Ltac auto_star ::=
   try easy;

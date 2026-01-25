@@ -5,7 +5,9 @@ formulas [Wpgen]. *)
 (* TODO: rename this file? *)
 
 #[warnings="-notation-overridden -ambiguous-paths -notation-incompatible-prefix"]
-From CFML Require Import WPLib.
+From CFML Require Export WPLib.
+Require Export SepViz_Notations.
+
 Set Implicit Arguments.
 
 Declare Scope Wp_untyped_scope.

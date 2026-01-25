@@ -128,7 +128,7 @@ GC
 }
 
 PurePredicate
-  = "[*" _ p:Formula _ "*]" {
+  = "⌜" _ p:Formula _ "⌝" {
     return { kind: "purePredicate", predicate: p };
 }
 
@@ -137,7 +137,7 @@ Formula = (@Atom _)*
 Atom = $RawAtom / $ParenthesizedAtom
 
 // Use "★" for the separating star to allow "*" in RawAtom.
-RawAtom = !("*]" / "*}" / "★") $[^()\p{White_Space}]+
+RawAtom = !("⌝" / "*}" / "★") $[^()\p{White_Space}]+
 
 ParenthesizedAtom
   = "(" _ (unsafe / ParenthesizedAtom _)* ")"

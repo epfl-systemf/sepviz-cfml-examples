@@ -14,7 +14,7 @@ Modified by Yawen.
 *)
 
 #[warnings="-notation-overridden -ambiguous-paths -notation-incompatible-prefix"]
-From SepDiagram.lib Require Import Notations ListNull.
+From SepDiagram.lib Require Import WPUntyped ListNull.
 
 Ltac auto_star ::=
   try easy;
