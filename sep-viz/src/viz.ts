@@ -25,6 +25,7 @@ export interface Symbol {
   isGlobal: boolean;
   uid: Uid;
   label: string;
+  // config: ArgConfig;
 }
 
 export type PurePredicate = (Symbol | string)[];
@@ -37,6 +38,7 @@ export interface HeapPredicate {
 export interface HeapObject {
   constr: string;
   args: Symbol[];
+  config: ConstrConfig; // set in DotBuilder constructor
 }
 
 export interface HeapState {
@@ -219,11 +221,22 @@ export class DotBuilder {
   ) {
     this.config = config;
     this.heapPredicates = heapPredicates;
+    this.heapPredicates.forEach((hpred) => {
+      hpred.obj.config = this.getConstrConfig(hpred.obj.constr);
+      // TODO: the following code does not correctly copy the idx-th config to arg.config, why?
+      // hpred.obj.args.forEach((arg, idx) => {
+      //   arg.config = hpred.obj.config.args[idx];
+      //   if (!arg.config)
+      //     throw new Error(
+      //       `Configuration for the ${idx} argument of constr ${hpred.obj.constr} is missing.`
+      //     );
+      // });
+    });
     this.knownPtrUids = new Set(heapPredicates.map((hpred) => hpred.addr.uid));
     this.inPortOfUid = Object.fromEntries(
       heapPredicates.map((hpred) => [
         hpred.addr.uid,
-        this.config.constr[hpred.obj.constr]?.inPort ?? null,
+        hpred.obj.config.inPort ?? null,
       ])
     ) as Record<Uid, string | null>;
     this.previousOrder = previousOrder;
@@ -472,12 +485,11 @@ export class DotBuilder {
       // Or: use '⏺' here and disable InTablePointerEdgeAttr
       constrField(inPort, label(sym), outPort, '');
 
-    const constrConfig = this.getConstrConfig(hpred.obj.constr);
     return table(
-      { cellborder: constrConfig.isFlat ? 1 : 0 },
+      { cellborder: hpred.obj.config.isFlat ? 1 : 0 },
       header,
       ...hpred.obj.args.flatMap((arg, idx) => {
-        const config = constrConfig.args[idx];
+        const config = hpred.obj.config.args[idx];
         if (!config.inTable) return [];
         return [
           this.knownPtrUids.has(arg.uid) || config.isPointer
@@ -490,9 +502,8 @@ export class DotBuilder {
 
   protected buildEdges(hpred: HeapPredicate): DotEdge[] {
     const srcUid = hpred.addr.uid;
-    const constrConfig = this.getConstrConfig(hpred.obj.constr);
     const allEdges = hpred.obj.args.flatMap((arg, idx) => {
-      const config = constrConfig.args[idx];
+      const config = hpred.obj.config.args[idx];
       if (!(this.knownPtrUids.has(arg.uid) || config.isPointer)) return [];
       const srcOutPorts = [config.outPort, config.inTable ? 'c' : 'e'];
       const dstUid = arg.uid;
