@@ -223,13 +223,11 @@ export class DotBuilder {
     this.heapPredicates = heapPredicates;
     this.heapPredicates.forEach((hpred) => {
       hpred.obj.config = this.getConstrConfig(hpred.obj.constr);
-      // TODO: the following code does not correctly copy the idx-th config to arg.config, why?
+      // below does not work because some args are aliased between hpreds with
+      // different constrs. specifically, existential args are unique across
+      // hpreds, and this would reset .config once for each of them
       // hpred.obj.args.forEach((arg, idx) => {
       //   arg.config = hpred.obj.config.args[idx];
-      //   if (!arg.config)
-      //     throw new Error(
-      //       `Configuration for the ${idx} argument of constr ${hpred.obj.constr} is missing.`
-      //     );
       // });
     });
     this.knownPtrUids = new Set(heapPredicates.map((hpred) => hpred.addr.uid));
@@ -488,15 +486,12 @@ export class DotBuilder {
     return table(
       { cellborder: hpred.obj.config.isFlat ? 1 : 0 },
       header,
-      ...hpred.obj.args.flatMap((arg, idx) => {
-        const config = hpred.obj.config.args[idx];
-        if (!config.inTable) return [];
-        return [
-          this.knownPtrUids.has(arg.uid) || config.isPointer
-            ? pointer(config.inPort, config.outPort, arg)
-            : value(config.inPort, arg),
-        ];
-      })
+      ...hpred.obj.args
+        .map((arg, idx) => [arg, hpred.obj.config.args[idx]])
+        .filter(([, config]) => config.inTable)
+        .map(([arg, config]) => this.knownPtrUids.has(arg.uid) || config.isPointer
+          ? pointer(config.inPort, config.outPort, arg)
+          : value(config.inPort, arg))
     );
   }
 
