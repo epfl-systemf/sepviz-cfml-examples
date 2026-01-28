@@ -18,6 +18,8 @@ import {
   NodeOrder,
   StarHeapPred,
   HeapObject,
+  OtherHeapPred,
+  OtherHeapPredKind,
 } from './viz';
 
 // @ts:ignore
@@ -66,6 +68,8 @@ function renderEmbedded(config: RenderConfig): Record<Vid, Vid> {
     return vid;
   }
 
+  const render = new Render(config, nodeOrders, previousVids);
+
   // TODO: handle classes "coq-message" and "goal-hyp" as well.
   document
     .querySelectorAll<ExtHTMLElement>(
@@ -87,7 +91,7 @@ function renderEmbedded(config: RenderConfig): Record<Vid, Vid> {
                 host.id = nextVid(sentenceNode.goalReset, unit.position);
               }
               goalNode.append(host);
-              renderHeapState(config, host, unit, nodeOrders, previousVids);
+              render.renderHeapState(unit, host);
             }
           });
         });
@@ -96,94 +100,162 @@ function renderEmbedded(config: RenderConfig): Record<Vid, Vid> {
   return previousVids;
 }
 
-// Render a heap state as a sep-visualization node (`host`) that has two views:
-// 1. source-code view
-// 2. diagram view: pure predicates + diagram (svg or dot)
-function renderHeapState(
-  config: RenderConfig,
-  host: HTMLElement,
-  state: HeapState,
-  nodeOrders: Record<Vid, NodeOrder | null>,
-  previousVids: Record<Vid, Vid>
-) {
-  const hide = (node: HTMLElement) => node.classList.add('hidden');
-  const show = (node: HTMLElement) => node.classList.remove('hidden');
-  const toggle = (toShow: HTMLElement, toHide: HTMLElement) => {
-    show(toShow);
-    hide(toHide);
-  };
+class Render {
+  private readonly config: RenderConfig;
+  private readonly nodeOrders: Record<Vid, NodeOrder | null>;
+  private readonly previousVids: Record<Vid, Vid>;
 
-  const vid = host.id;
-  const previousVid = previousVids[vid];
-
-  const srcView = createElement('div', ['sep-source'], { text: state.raw });
-  const diagramView = createElement('div', ['sep-diagram']);
-  host.append(diagramView, srcView);
-  hide(srcView); // default: diagram view
-  srcView.addEventListener('click', () => toggle(diagramView, srcView));
-
-  if (state.pred.purePreds.length > 0) {
-    const purePredsNode = renderPurePredicates(state.pred.purePreds);
-    diagramView.append(purePredsNode);
-    purePredsNode.addEventListener('click', () => toggle(srcView, diagramView));
+  constructor(
+    config: RenderConfig,
+    nodeOrders: Record<Vid, NodeOrder | null>,
+    previousVids: Record<Vid, Vid>
+  ) {
+    this.config = config;
+    this.nodeOrders = nodeOrders;
+    this.previousVids = previousVids;
   }
 
-  if (state.pred.heapObjs.length > 0) {
-    const dotNode = createElement('div', ['sep-diagram-dot']);
-    const dotCopy = createElement('button', ['copy-button'], { text: 'Copy' });
-    const dotBuilder = new DotBuilder(
-      config,
-      state.pred.heapObjs,
-      previousVid ? nodeOrders[previousVid] : null
+  private hide(node: HTMLElement) {
+    node.classList.add('hidden');
+  }
+
+  private show(node: HTMLElement) {
+    node.classList.remove('hidden');
+  }
+
+  private toggle(toShow: HTMLElement, toHide: HTMLElement) {
+    this.show(toShow);
+    this.hide(toHide);
+  }
+
+  public renderHeapState(state: HeapState, host: HTMLElement) {
+    const vid = host.id;
+    const previousVid = this.previousVids[vid];
+    const previousNodeOrder = previousVid ? this.nodeOrders[previousVid] : null;
+
+    const srcView = createElement('div', ['sep-source'], { text: state.raw });
+    const dgmView = createElement('div', ['sep-diagram']);
+    host.append(dgmView, srcView);
+    this.hide(srcView); // default: diagram view
+    srcView.addEventListener('click', () => this.toggle(dgmView, srcView));
+
+    const srcButton = createElement('button', ['src-button'], {
+      text: 'formula',
+    });
+    srcButton.addEventListener('click', () => this.toggle(srcView, dgmView));
+
+    dgmView.append(
+      srcButton,
+      this.renderStarHeapPred(state.pred, vid, previousNodeOrder)
     );
-    nodeOrders[vid] = dotBuilder.nodeOrder;
+  }
+
+  protected renderStarHeapPred(
+    pred: StarHeapPred,
+    vid: Vid,
+    previousNodeOrder: NodeOrder | null
+  ) {
+    const host = createElement('div', ['sep-star-pred-container']);
+    if (pred.purePreds.length > 0) {
+      host.append(this.renderPurePreds(pred.purePreds));
+    }
+    if (pred.heapObjs.length > 0) {
+      host.append(this.renderHeapObjs(pred.heapObjs, vid, previousNodeOrder));
+    }
+    pred.otherHeapPreds.forEach((otherPred) => {
+      host.append(this.renderOtherHeapPred(otherPred));
+    });
+    return host;
+  }
+
+  protected renderPurePreds(purePreds: PurePredicate[]): HTMLElement {
+    const host = createElement('div', ['sep-pure-pred-container']);
+    purePreds.forEach((purePred: PurePredicate) => {
+      let purePredNode = createElement('div', ['sep-pure-pred']);
+      purePred.forEach((unit: Symbol | string, index: number) => {
+        if (index != 0) purePredNode.appendChild(document.createTextNode(' '));
+        const node =
+          typeof unit === 'string'
+            ? createElement('span', [], { text: unit })
+            : createElement('span', ['sep-exist-var'], {
+                text: (unit as Symbol).label,
+              });
+        purePredNode.appendChild(node);
+      });
+      host.appendChild(purePredNode);
+    });
+    return host;
+  }
+
+  protected renderHeapObjs(
+    heapObjs: HeapObject[],
+    vid: Vid,
+    previousNodeOrder: NodeOrder | null
+  ) {
+    const host = createElement('div', ['sep-heap-obj-container']);
+    const dotNode = createElement('div', ['sep-dot']);
+    const svgNode = createElement('div', ['sep-svg']);
+    host.append(dotNode, svgNode);
+    this.hide(dotNode); // default: svg
+
+    const dotBuilder = new DotBuilder(this.config, heapObjs, previousNodeOrder);
     const dot = dotBuilder.dot;
+    this.nodeOrders[vid] = dotBuilder.nodeOrder;
+
+    const dotCopy = createElement('button', ['copy-button'], { text: 'Copy' });
     const dotContent = createElement('div', ['content'], { text: dot });
     dotNode.append(dotCopy, dotContent);
 
-    const svgNode = createElement('div', ['sep-diagram-svg']);
     // Call `dot` then `render` instead of `renderDot` to do the computational
     // intensive layout stages for graphs before doing the potentially
     // synchronized rendering of all the graphs simultaneously.
     d3.select(svgNode).graphviz(GraphvizOptions).dot(dot).render();
 
-    diagramView.append(svgNode, dotNode);
-    hide(dotNode);
-
-    svgNode.addEventListener('click', () => toggle(dotNode, svgNode));
-    dotContent.addEventListener('click', () => {
-      toggle(svgNode, dotNode);
-      toggle(srcView, diagramView);
-    });
-    dotCopy.addEventListener('click', () => {
+    svgNode.addEventListener('click', () => {
       navigator.clipboard
         .writeText(dotContent.textContent)
         .then(() => {
-          dotCopy.textContent = 'Copied!';
-          setTimeout(() => (dotCopy.textContent = 'Copy'), 800);
+          const tooltip = createElement('div', ['tooltip-copied'], {
+            text: 'DOT source copied',
+          });
+          const rect = svgNode.getBoundingClientRect();
+          tooltip.style.left = `${rect.left + window.scrollX}px`;
+          tooltip.style.top = `${rect.top + window.scrollY - 20}px`;
+
+          document.body.appendChild(tooltip);
+
+          requestAnimationFrame(() => (tooltip.style.opacity = '1')); // fade in
+
+          setTimeout(() => {
+            tooltip.style.opacity = '0';
+            tooltip.addEventListener('transitionend', () => tooltip.remove());
+          }, 1000); // fade out after 1s
         })
         .catch((err) => console.error('Copy failed', err));
     });
+    return host;
   }
-}
 
-function renderPurePredicates(purePredicates: PurePredicate[]): HTMLElement {
-  const host = createElement('div', ['sep-pure-predicate-container']);
-  purePredicates.forEach((predicate: PurePredicate) => {
-    let predicateNode = createElement('div', ['sep-pure-predicate']);
-    predicate.forEach((unit: Symbol | string, index: number) => {
-      if (index != 0) predicateNode.appendChild(document.createTextNode(' '));
-      const node =
-        typeof unit === 'string'
-          ? createElement('span', [], { text: unit })
-          : createElement('span', ['sep-exist-var'], {
-              text: (unit as Symbol).label,
-            });
-      predicateNode.appendChild(node);
-    });
-    host.appendChild(predicateNode);
-  });
-  return host;
+  protected renderOtherHeapPred(otherPred: OtherHeapPred) {
+    const host = createElement('div', ['sep-other-pred-container']);
+    const H1 = this.renderStarHeapPred(otherPred.H1, 'vid-none', null); // FIXME
+    const H2 = this.renderStarHeapPred(otherPred.H2, 'vid-none', null); // FIXME
+    const op = createElement('div', ['sep-op']);
+    host.append(H1, op, H2);
+    switch (otherPred.kind) {
+      case OtherHeapPredKind.WandHeapPred:
+        op.innerText = '-∗';
+        H1.classList.add('sep-wand-hyp');
+        break;
+      case OtherHeapPredKind.ConjHeapPred:
+        op.innerText = '/\\';
+        break;
+      case OtherHeapPredKind.DisjHeapPred:
+        op.innerText = '\\/';
+        break;
+    }
+    return host;
+  }
 }
 
 interface GraphvizInstance {
@@ -208,7 +280,7 @@ function setupAnimation(
 
   function getDotByVid(vid: Vid): string | null {
     const node = document.querySelector<HTMLElement>(
-      `#${vid} .sep-diagram-dot .content`
+      `#${vid} .sep-dot .content`
     );
     if (!node) {
       console.warn('Cannot find the dot content for vid: ', vid);
@@ -224,10 +296,9 @@ function setupAnimation(
     const previous = previousVids[vid];
     if (!previous) return;
 
-    const svgNode = vizNode.querySelector<SVGElement>('.sep-diagram-svg');
-    const dot = vizNode.querySelector<HTMLElement>(
-      '.sep-diagram-dot .content'
-    )?.innerText;
+    const svgNode = vizNode.querySelector<SVGElement>('.sep-svg');
+    const dot =
+      vizNode.querySelector<HTMLElement>('.sep-dot .content')?.innerText;
     const gviz = svgNode?.__graphviz__;
     const prevDot = getDotByVid(previous);
 

@@ -93,17 +93,17 @@ GallinaTermWithTop
 DefaultTop = t:Top { return [{position: "default", ...t}]; }
 
 Top
-  = "{*" _ f:SepFormula _ "*}" {
+  = "{*" _ f:WandFormula _ "*}" {
     return { raw: text(), parsed: f };
 }
 
-SepFormula // wand-level (wand is right associative), stars bind tighter than wands
-  = H1: Stars _ "-∗" _ H2: SepFormula {
+WandFormula
+  = H1: Stars _ "-∗" _ H2: WandFormula { // wand is right associative
       return { kind: "wand", H1, H2 };
     }
   / Stars
 
-Stars
+Stars // stars bind tighter than wands
   = hd:Term tl:(_ "★" _ @Term)* {
   return { kind: "stars", conjuncts: [hd, ...tl] };
 }
@@ -115,7 +115,7 @@ Term // non-recursive base terms
   / PurePredicate
   / GC
 
-Parenthesized = "(" @Stars ")"
+Parenthesized = "(" @WandFormula ")"
 
 Existential
   = ("exists" / "∃") _ binder:name _ "," _ body:Stars {
@@ -143,7 +143,7 @@ Formula = (@Atom _)*
 Atom = $RawAtom / $ParenthesizedAtom
 
 // Use "★" for the separating star to allow "*" in RawAtom.
-RawAtom = !("⌝" / "*}" / "★") $[^()\p{White_Space}]+
+RawAtom = !("⌝" / "*}" / "★" / "-∗") $[^()\p{White_Space}]+
 
 ParenthesizedAtom
   = "(" _ (unsafe / ParenthesizedAtom _)* ")"

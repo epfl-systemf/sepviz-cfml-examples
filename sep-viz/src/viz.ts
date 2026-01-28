@@ -49,7 +49,11 @@ export interface HeapState {
   pred: StarHeapPred;
 }
 
-export type OtherHeapPred = WandHeapPred | ConjHeapPred | DisjHeapPred;
+export enum OtherHeapPredKind {
+  WandHeapPred,
+  ConjHeapPred,
+  DisjHeapPred,
+}
 
 export interface StarHeapPred {
   heapObjs: HeapObject[];
@@ -57,20 +61,9 @@ export interface StarHeapPred {
   otherHeapPreds: OtherHeapPred[];
 }
 
-export interface WandHeapPred {
-  // magic wand
-  H1: StarHeapPred;
-  H2: StarHeapPred;
-}
-
-export interface ConjHeapPred {
-  // non-separating conjunction
-  H1: StarHeapPred;
-  H2: StarHeapPred;
-}
-
-export interface DisjHeapPred {
-  // disjunction
+export interface OtherHeapPred {
+  // magic wand, non-separating conjunction, disjunction
+  kind: OtherHeapPredKind;
   H1: StarHeapPred;
   H2: StarHeapPred;
 }
@@ -133,7 +126,8 @@ function resolveSymbols(unit: any, renderConfig: RenderConfig): HeapState {
         });
         break;
       case 'wand':
-        const wand: WandHeapPred = {
+        const wand: OtherHeapPred = {
+          kind: OtherHeapPredKind.WandHeapPred,
           H1: newStarHeapPred(),
           H2: newStarHeapPred(),
         };

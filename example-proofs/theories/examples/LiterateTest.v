@@ -17,8 +17,20 @@ Definition MCell2 [A B] `{EA: Enc A} `{EB: Enc B} (x1: A) (x2: B) p :=
 
 (*||*)
 
-Lemma test_wand: forall (p q: loc) (a b c d: nat),
+Lemma test_stars: forall (p q r w: loc) (a b c d: nat),
+  p ~> MCell a \* q ~> MCell b \* (r ~> MCell c \* w ~> MCell d) ==> \[].
+Proof. Admitted.
+
+Lemma test_wand0: forall (p q: loc) (a b c d: nat),
   q ~> MCell a \* p ~> MCell2 a b \-* p ~> MCell2 c d ==> \[].
+Proof. Admitted.
+
+Lemma test_wand1: forall (p q: loc) (a b c d: nat),
+  (q ~> MCell a \* p ~> MCell2 a b \-* p ~> MCell2 c d \* \[a + b = c]) \* q ~> MCell b ==> \[].
+Proof. Admitted.
+
+Lemma test_chained_wands: forall (p q r: loc) (a b c d: nat),
+  r ~> MCell c \* q ~> MCell a \-* p ~> MCell2 a b \-* p ~> MCell2 c d \* \[a + b = c] ==> \[].
 Proof. Admitted.
 
 Lemma test_node_ordering0: forall (a b c d e f g h i: loc),
