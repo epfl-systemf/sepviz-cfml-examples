@@ -104,7 +104,7 @@ WandFormula
   / Stars
 
 Stars // stars bind tighter than wands
-  = hd:Term tl:(_ "★" _ @Term)* {
+  = hd:Term tl:(_ "∗" _ @Term)* {
   return { kind: "stars", conjuncts: [hd, ...tl] };
 }
 
@@ -143,7 +143,7 @@ Formula = (@Atom _)*
 Atom = $RawAtom / $ParenthesizedAtom
 
 // Use "★" for the separating star to allow "*" in RawAtom.
-RawAtom = !("⌝" / "*}" / "★" / "-∗") $[^()\p{White_Space}]+
+RawAtom = !("⌝" / "*}" / "∗" / "-∗") $[^()\p{White_Space}]+
 
 ParenthesizedAtom
   = "(" _ (unsafe / ParenthesizedAtom _)* ")"

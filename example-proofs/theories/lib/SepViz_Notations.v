@@ -6,7 +6,7 @@ Notation "{*  e  *}" :=
   (e)
   (e custom sepviz_heap at level 200, at level 0).
 
-Notation "H1 ★ H2" :=
+Notation "H1 ∗ H2" :=
   (hstar H1 H2)
     (in custom sepviz_heap at level 41,
      H2 custom sepviz_heap at level 41).
