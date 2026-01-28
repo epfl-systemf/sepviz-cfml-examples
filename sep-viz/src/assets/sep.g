@@ -109,7 +109,7 @@ NamedTop // for iris
 
 Top
   = "{*" _ f:WandFormula _ "*}" {
-    return { kind: "top", raw: text(), parsed: f };
+    return { raw: text(), parsed: f };
 }
 
 WandFormula

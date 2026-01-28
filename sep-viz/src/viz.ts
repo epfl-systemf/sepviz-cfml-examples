@@ -174,13 +174,12 @@ function resolveSymbols(unit: any, renderConfig: RenderConfig): HeapState {
     }
   }
 
-  if (unit.kind === 'top') loop(unit.parsed, {}, pred, '');
-  else if (unit.kind === 'namedtops') {
+  if (unit.kind === 'namedtops') {
     const ctx = {};
     unit.tops.forEach((top: any) =>
       loop(top.top.parsed, ctx, pred, top.binder)
     );
-  }
+  } else loop(unit.parsed, {}, pred, '');
 
   return { position: unit.position, raw: unit.raw, pred: pred };
 }
