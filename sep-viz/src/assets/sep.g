@@ -90,11 +90,26 @@ GallinaTermWithTop
     }
     / [^()\p{White_Space}]+ { return {raw: text()}; }
 
-DefaultTop = t:Top { return [{position: "default", ...t}]; }
+DefaultTop = t:(NamedTops / Top) { return [{position: "default", ...t}]; }
+
+NamedTops
+  = "[*" _ hd:NamedTopsAtom tl:(_ @NamedTopsAtom)* _ "*]" {
+      const hdtops = hd.kind === "namedtops" ? hd.tops : [hd];
+      const namedtops = [...hdtops, ...tl];
+      return { kind: "namedtops", raw: text(), tops: namedtops };
+    }
+
+NamedTopsAtom
+  = NamedTops / NamedTop
+
+NamedTop // for iris
+  = '\"' _ binder:name _ '\"' _ ":" _ top:Top {
+    return { kind: "nametop", top, binder}
+}
 
 Top
   = "{*" _ f:WandFormula _ "*}" {
-    return { raw: text(), parsed: f };
+    return { kind: "top", raw: text(), parsed: f };
 }
 
 WandFormula
@@ -102,6 +117,12 @@ WandFormula
       return { kind: "wand", H1, H2 };
     }
   / Stars
+  / AbstractPred
+
+AbstractPred
+  = body: "Φ #()" {
+    return { kind: "abstract", body };
+}
 
 Stars // stars bind tighter than wands
   = hd:Term tl:(_ "∗" _ @Term)* {
@@ -114,6 +135,7 @@ Term // non-recursive base terms
   / PointsTo
   / PurePredicate
   / GC
+  / Modality
 
 Parenthesized = "(" @WandFormula ")"
 
@@ -138,6 +160,11 @@ PurePredicate
     return { kind: "purePredicate", predicate: p };
 }
 
+Modality
+  = op:("▷" / "□") _ body:Term {
+    return { kind: "modality", op, body }
+}
+
 Formula = (@Atom _)*
 
 Atom = $RawAtom / $ParenthesizedAtom
@@ -148,7 +175,7 @@ RawAtom = !("⌝" / "*}" / "∗" / "-∗") $[^()\p{White_Space}]+
 ParenthesizedAtom
   = "(" _ (unsafe / ParenthesizedAtom _)* ")"
 
-name = $[A-Za-z0-9_\']+
+name = $[A-Za-z0-9_\'Φ]+
 
 unsafe = $[^()]+
 
