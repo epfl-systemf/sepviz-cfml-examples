@@ -1,12 +1,6 @@
-[submodule "arthur/tlc"]
-	path = arthur/tlc
-	url = https://github.com/charguer/tlc.git
-[submodule "arthur/cfml2"]
-	path = arthur/cfml2
-	url = https://gitlab.inria.fr/charguer/cfml2.git
-[submodule "example-proofs/vendor/tlc"]
-	path = example-proofs/vendor/tlc
+[submodule "vendor/tlc"]
+	path = vendor/tlc
 	url = git@github.com:charguer/tlc.git
-[submodule "example-proofs/vendor/cfml"]
-	path = example-proofs/vendor/cfml
+[submodule "vendor/cfml"]
+	path = vendor/cfml
 	url = git@github.com:yawen-guan/cfml.git
