@@ -8,5 +8,3 @@
 *.glob
 .*.aux
 .lia.cache
-
-_build
