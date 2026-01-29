@@ -1,1 +1,12 @@
 **/.direnv
+
+# Coq
+*.vo
+*.vok
+*.vos
+*.vio
+*.glob
+.*.aux
+.lia.cache
+
+_build
