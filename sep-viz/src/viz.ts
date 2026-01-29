@@ -100,7 +100,12 @@ function resolveSymbols(unit: any, renderConfig: RenderConfig): HeapState {
     return gensym[prefix]++;
   }
 
-  function resolve(ctx: Record<string, Symbol>, key: string): Symbol {
+  function removeHeadingHash(s: string): string {
+    return s.replace(/^#/, '');
+  }
+
+  function resolve(ctx: Record<string, Symbol>, s: string): Symbol {
+    const key = removeHeadingHash(s); // FIXME: hack for iris "#x"
     return key in ctx ? ctx[key] : { isGlobal: true, uid: key, label: key };
   }
 

@@ -74,3 +74,16 @@ constr:
   # iris-tutorial queue
   isQueue:
     argNum: 1
+  Pair:
+    drawBorder: 1
+    argNum: 2
+  isListSeg:
+    inPort: list
+    args:
+      0:
+        inTable: true
+        inPort: list
+        outPort: list
+      1:
+        forceEdge: true
+        outPort: list
