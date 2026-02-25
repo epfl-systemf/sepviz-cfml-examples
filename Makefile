@@ -20,9 +20,11 @@ EXM_VO_FILES := $(addprefix $(EXM)/, $(VFILES_IN_EXM:.v=.vo))
 # HTML_FILES := $(addprefix $(OUT_DIR)/, $(VFILES_IN_EXM:.v=.html))
 HTML_FILES := $(OUT_DIR)/CFML-Queue.html $(OUT_DIR)/CFML-Tree.html $(OUT_DIR)/CFML-Test.html
 
-.PHONY: default tlc cfml clean-web clean-theories clean test
+.PHONY: default sepviz tlc cfml clean-web clean-theories clean test
 
 default: $(LIB_VO_FILES) $(EXM_VO_FILES) $(HTML_FILES)
+
+sepviz: $(HTML_FILES)
 
 tlc:
 	$(MAKE) -C vendor/tlc -j4
