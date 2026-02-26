@@ -3,10 +3,12 @@ USE_NIX ?= false
 OUT_DIR ?= _sepviz_build
 
 ifeq ($(USE_NIX), false)
-	COQFLAGS=-R theories SepDiagram -Q vendor/cfml/lib/coq CFML -Q vendor/tlc/src TLC
+	COQ_FLAGS=-R theories SepDiagram -Q vendor/cfml/lib/coq CFML -Q vendor/tlc/src TLC
 else
-	COQFLAGS=-R theories SepDiagram
+	COQ_FLAGS=-R theories SepDiagram
 endif
+
+ALECTRYON_FLAGS := ${COQ_FLAGS} --webpage-style windowed
 
 LIB := theories/lib
 EXM := theories/examples
@@ -34,7 +36,7 @@ cfml: tlc
 	$(MAKE) COQEXTRAFLAGS="-Q ../tlc/src TLC" -C vendor/cfml libcoq
 
 %.vo: %.v
-	$(COQC) $(COQFLAGS) $<
+	$(COQC) $(COQ_FLAGS) $<
 
 $(LIB)/WPUntyped.vo: $(LIB)/SepViz_Notations.vo
 $(LIB)/ListNull.vo: $(LIB)/WPUntyped.vo
@@ -43,17 +45,14 @@ $(LIB)/ListNull.vo: $(LIB)/WPUntyped.vo
 $(OUT_DIR):
 	mkdir -p $@
 
-# $(OUT_DIR)/%.html: $(EXM)/%.v $(LIB_VFILES:.v=.vo)
-# 	alectryon $(COQFLAGS) --output $@ $<
-
 $(OUT_DIR)/CFML-Queue.html: $(EXM)/LiterateQueue.v $(LIB_VFILES:.v=.vo)
-	alectryon $(COQFLAGS) --output $@ $<
+	alectryon $(ALECTRYON_FLAGS) --output $@ $<
 
 $(OUT_DIR)/CFML-Tree.html: $(EXM)/LiterateTree.v $(LIB_VFILES:.v=.vo)
-	alectryon $(COQFLAGS) --output $@ $<
+	alectryon $(ALECTRYON_FLAGS) --output $@ $<
 
 $(OUT_DIR)/CFML-Test.html: $(EXM)/LiterateTest.v $(LIB_VFILES:.v=.vo)
-	alectryon $(COQFLAGS) --output $@ $<
+	alectryon $(ALECTRYON_FLAGS) --output $@ $<
 
 clean-web:
 	rm -rf $(OUT_DIR)
