@@ -167,8 +167,6 @@ Section GetSet.
 End GetSet.
 End NodeSpecs.
 
-(*||*)
-
 Section TreeApiSpecs.
 
   Context [A: Type] `{EA: Enc A}.
@@ -183,6 +181,8 @@ Section TreeApiSpecs.
     - rewrite MTree_leaf. xsimpl*.
     - xchange MTree_node_not_null. xsimpl*.
   Qed.
+
+(*||*)
 
   Lemma Triple_left_rotate: forall t p,
     SPEC (left_rotate p)
@@ -233,6 +233,10 @@ Section TreeApiSpecs.
         xchange <- (@MTree_node A EA p). xchange <- MTree_node.
         mxvals.
   Qed.
+
+(*|
+.. coq:: none
+|*)
 
   Lemma Triple_left_right_rotate: forall t x tl xr trl trr p,
     t = node x tl (node xr trl trr) ->

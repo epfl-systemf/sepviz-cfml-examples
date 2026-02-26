@@ -52,8 +52,6 @@ Section QueueApiImpl.
 
 End QueueApiImpl.
 
-(*||*)
-
 Goal forall A `{EA: Enc A} (L: list A) p f b,
   Triple (is_empty p)
     (f ~> MListSeg b L)
@@ -82,6 +80,8 @@ Proof using.
   rewrite* isTrue_eq_isTrue_eq.
 Qed.
 
+(*||*)
+
 Lemma Triple_transfer : forall {A} `{EA: Enc A} (L1 L2: list A) p1 p2,
   Triple (transfer p1 p2)
     (p1 ~> MQueue L1 \* p2 ~> MQueue L2)
@@ -101,6 +101,10 @@ Proof using.
     xchanges (@MListSeg_nil_intro A EA f2).
   - subst. rew_list. mxvals.
 Qed.
+
+(*|
+.. coq:: none
+|*)
 
 Lemma Triple_transfer_test_brackets : forall {A} `{EA: Enc A} (L1 L2: list A) p1 p2,
   Triple (transfer p1 p2)
@@ -124,10 +128,6 @@ Qed.
 
 Ltac auto_star ::= auto_star_default.
 Ltac auto_tilde ::= auto_tilde_default.
-
-(*|
-.. coq:: none
-|*)
 
 (* ********************************************************************** *)
 (* ** Bonus *)
