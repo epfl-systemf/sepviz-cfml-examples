@@ -8,3 +8,6 @@
 *.glob
 .*.aux
 .lia.cache
+
+# sepviz
+_sepviz_build
