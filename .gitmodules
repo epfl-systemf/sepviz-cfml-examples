@@ -1,6 +1,6 @@
 [submodule "vendor/tlc"]
 	path = vendor/tlc
-	url = git@github.com:charguer/tlc.git
+	url = https://github.com/charguer/tlc.git
 [submodule "vendor/cfml"]
 	path = vendor/cfml
-	url = git@github.com:yawen-guan/cfml.git
+	url = https://github.com/yawen-guan/cfml.git
