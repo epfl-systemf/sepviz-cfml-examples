@@ -182,6 +182,32 @@ Section TreeApiSpecs.
     - xchange MTree_node_not_null. xsimpl*.
   Qed.
 
+(** ** file-specific sepviz notations *)
+
+Notation "'$MTree' '┆' x1" :=
+  (MTree x1)
+    (in custom val at level 200,
+     x1 constr at level 200).
+
+Notation "'$MNode' '┆' x1 '┆' x2 '┆' x3" :=
+  (MNode x1 x2 x3)
+    (in custom val at level 200,
+     x1 constr at level 200,
+     x2 constr at level 200,
+     x3 constr at level 200).
+
+Notation "'$list_app' '┆' x1 '┆' x2 " :=
+  (app x1 x2)
+    (in custom val at level 200,
+     x1 constr at level 200,
+     x2 constr at level 200).
+
+Notation "'$list_cons' '┆' x1 '┆' x2 " :=
+  (cons x1 x2)
+    (in custom val at level 200,
+     x1 constr at level 200,
+     x2 constr at level 200).
+
 (*||*)
 
   Lemma Triple_left_rotate: forall t p,

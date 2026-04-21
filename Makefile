@@ -8,7 +8,11 @@ else
 	COQ_FLAGS=-R theories SepDiagram
 endif
 
-ALECTRYON_FLAGS := ${COQ_FLAGS} --webpage-style windowed
+ALECTRYON_FLAGS := \
+  $(COQ_FLAGS) \
+  --webpage-style windowed \
+  --coq-driver sertop \
+  --long-line-threshold 0
 
 LIB := theories/lib
 EXM := theories/examples

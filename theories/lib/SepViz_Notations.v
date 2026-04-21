@@ -3,52 +3,73 @@ From CFML Require Import WPLib.
 
 (** ** Separation-logic formulas *)
 
-Declare Custom Entry sepviz.
+Declare Custom Entry sep.
 
 Notation "⟬  e  ⟭" :=
   (e)
-    (e custom sepviz at level 200, at level 0).
+    (e custom sep at level 200, at level 0).
 
 Notation "'Pure' '┆' P" :=
   (hpure P)
-    (in custom sepviz at level 200,
+    (in custom sep at level 200,
      P constr at level 200).
 
 Notation "'PointsTo' '┆' x '┆' S" :=
   (repr S x)
-    (in custom sepviz at level 200,
+    (in custom sep at level 200,
         x constr at level 200,
         S constr at level 200).
 
 Notation "'Star' '┆' H1 '┆' H2" :=
   (hstar H1 H2)
-    (in custom sepviz at level 200,
+    (in custom sep at level 200,
      H1 constr at level 200,
      H2 constr at level 200).
 
 Notation "'Wand' '┆' H1 '┆' H2" :=
   (hwand H1 H2)
-    (in custom sepviz at level 200,
+    (in custom sep at level 200,
      H1 constr at level 200,
      H2 constr at level 200).
 
 Notation "'Exist' '┆' x '┆' P" :=
   (hexists (fun x => P))
-    (in custom sepviz at level 200,
-      P constr at level 200).
+    (in custom sep at level 200,
+     x name, (* necessary for binder *)
+     P constr at level 200).
 
 Notation "'Opaque' '┆' 'GC'" :=
   (hgc)
-    (in custom sepviz at level 200).
+    (in custom sep at level 200).
 
 Notation "'Opaque' '┆' 'emp'" :=
   (hempty)
-    (in custom sepviz at level 200).
+    (in custom sep at level 200).
 
-Notation "'SPEC' t '⟬*' 'PRE' '@' H '*⟭' 'POST' Q" :=
+Notation "'SPEC' t '⟬*' 'PRE' '@' H '*⟭' '⟬*' 'POST' '@' Q '*⟭'" :=
   (Triple t H Q)
-    (in custom sepviz at level 200,
-      format "'SPEC' t '//' '⟬*'  'PRE'  '@'  H  '*⟭' '//' 'POST' Q").
+    (at level 200,
+     t constr at level 200,
+     H constr at level 200,
+     Q constr at level 200,
+     format "'SPEC'  t '//' '⟬*'  'PRE'  '@'  H  '*⟭' '//' '⟬*'  'POST'  '@'  Q  '*⟭'").
+
+Notation "'⟬*' 'PRE' '@' H '*⟭' 'CODE' F '⟬*' 'POST' '@' Q '*⟭'" :=
+  (himpl H (Wptag F _ Q))
+    (at level 200,
+     H constr at level 200,
+     F constr at level 200,
+     Q constr at level 200,
+     format "'⟬*'  'PRE'  '@'  H  '*⟭' '//' 'CODE'  F '//' '⟬*'  'POST'  '@'  Q  '*⟭'").
+
+(* For continuous animation *)
+Notation "'⟬*' 'PRE' '@' H1 '*⟭' '==>' '⟬*' 'POST' '@' H2 '*⟭'" :=
+  (himpl H1 H2)
+    (at level 200,
+     H1 constr at level 200,
+     H2 constr at level 200,
+     format "'⟬*'  'PRE'  '@'  H1  '*⟭' '==>' '⟬*'  'POST'  '@'  H2  '*⟭'").
+
 
 (** ** disable notations *)
 
