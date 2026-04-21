@@ -102,6 +102,47 @@ Proof using.
   - subst. rew_list. mxvals.
 Qed.
 
+
+Notation "'$MCell' '┆' x1" :=
+  (MCell x1)
+    (in custom val at level 200,
+     x1 constr at level 200).
+
+Notation "'$MCell' '┆' x1 '┆' x2 " :=
+  (MCell x1 x2)
+    (in custom val at level 200,
+     x1 constr at level 200,
+     x2 constr at level 200).
+
+Notation "'$MQueue' '┆' x1" :=
+  (MQueue x1)
+    (in custom val at level 200,
+     x1 constr at level 200).
+
+Notation "'$MQueue' '┆' x1 '┆' x2 " :=
+  (MQueue x1 x2)
+    (in custom val at level 200,
+     x1 constr at level 200,
+     x2 constr at level 200).
+
+Notation "'$MListSeg' '┆' x1 '┆' x2 " :=
+  (MListSeg x1 x2)
+    (in custom val at level 200,
+     x1 constr at level 200,
+     x2 constr at level 200).
+
+Notation "'$list_app' '┆' x1 '┆' x2 " :=
+  (app x1 x2)
+    (in custom val at level 200,
+     x1 constr at level 200,
+     x2 constr at level 200).
+
+Notation "'$list_cons' '┆' x1 '┆' x2 " :=
+  (cons x1 x2)
+    (in custom val at level 200,
+     x1 constr at level 200,
+     x2 constr at level 200).
+
 (*|
 .. coq:: none
 |*)
