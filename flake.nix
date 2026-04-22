@@ -2,7 +2,7 @@
   description = "A nix-flake-based development environment with cfml & tlc";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     alectryon-src = {
       url = "github:cpitclaudel/alectryon/v2.0.0";
@@ -57,6 +57,9 @@
               '';
               doCheck = false;
             };
+            vsrocq-language-server-8_20 = final.rocqPackages.vsrocq-language-server.override {
+              coq = final.coqPackages_8_20.coq;
+            };
           };
           pkgs = import nixpkgs {
             inherit system;
@@ -68,7 +71,10 @@
           devShells.default = pkgs.mkShell {
             packages =
               with pkgs;
-              [ alectryon ]
+              [
+                alectryon
+                vsrocq-language-server-8_20
+              ]
               ++ (with coqPkgs; [
                 coq
                 serapi

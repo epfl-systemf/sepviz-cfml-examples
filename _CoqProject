@@ -1,3 +1,6 @@
+-arg -set -arg "'Printing Depth=100'"
+-arg -set -arg "'Printing Width=100'"
+
 -R theories SepDiagram
 -Q vendor/cfml/lib/coq CFML
 -Q vendor/tlc/src TLC

@@ -11,7 +11,6 @@ endif
 ALECTRYON_FLAGS := \
   $(COQ_FLAGS) \
   --webpage-style windowed \
-  --coq-driver sertop \
   --long-line-threshold 0
 
 LIB := theories/lib
@@ -26,7 +25,7 @@ EXM_VO_FILES := $(addprefix $(EXM)/, $(VFILES_IN_EXM:.v=.vo))
 # HTML_FILES := $(addprefix $(OUT_DIR)/, $(VFILES_IN_EXM:.v=.html))
 HTML_FILES := $(OUT_DIR)/CFML-Queue.html $(OUT_DIR)/CFML-Tree.html $(OUT_DIR)/CFML-Test.html
 
-.PHONY: default sepviz tlc cfml clean-web clean-theories clean test
+.PHONY: default tlc cfml sepviz sepviz-clean clean-theories clean test
 
 default: $(LIB_VO_FILES) $(EXM_VO_FILES) $(HTML_FILES)
 
@@ -58,7 +57,7 @@ $(OUT_DIR)/CFML-Tree.html: $(EXM)/LiterateTree.v $(LIB_VFILES:.v=.vo)
 $(OUT_DIR)/CFML-Test.html: $(EXM)/LiterateTest.v $(LIB_VFILES:.v=.vo)
 	alectryon $(ALECTRYON_FLAGS) --output $@ $<
 
-clean-web:
+sepviz-clean:
 	rm -rf $(OUT_DIR)
 
 clean-theories:

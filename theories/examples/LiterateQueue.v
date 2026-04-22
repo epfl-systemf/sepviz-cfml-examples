@@ -13,9 +13,6 @@ License: CC-by 4.0.
 Modified by Yawen.
  *)
 
-Set Printing Width 100.
-Set Printing Depth 100.
-
 #[warnings="-notation-overridden -ambiguous-paths -notation-incompatible-prefix"]
 From SepDiagram.lib Require Import WPUntyped ListNull.
 
@@ -54,12 +51,6 @@ Section QueueApiImpl.
     Else ``tt.
 
 End QueueApiImpl.
-
-Goal forall A `{EA: Enc A} (L: list A) p f b,
-  Triple (is_empty p)
-    (f ~> MListSeg b L)
-    (fun (r: unit) => \[]).
-Proof. Abort.
 
 Lemma Triple_test_drawing_pure_conditions: forall A `{EA: Enc A} (L: list A) p,
   Triple (is_empty p)
