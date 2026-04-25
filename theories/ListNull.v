@@ -1,4 +1,7 @@
-Require Import WPUntyped SepViz_Notations.
+Require Import WPUntyped.
+
+Require Import SepvizNotations.
+Open Scope sepviz_scope.
 
 Implicit Types (p q: loc).
 
@@ -10,6 +13,11 @@ Definition tail : field := 1%nat.
 
 Definition MCell [A] `{EA: Enc A} (x: A) q p: hprop :=
   (p`.head ~~> ``x) \* (p`.tail ~~> ``q).
+
+Notation "'$MCell' ┆ x1 ┆ x2 " :=
+  (MCell x1 x2)
+    (in custom val at level 200,
+     x1 constr, x2 constr at level 200): sepviz_scope.
 
 Local Transparent repr Hfield hfield.
 
@@ -57,6 +65,11 @@ Fixpoint MListSeg [A] `{EA: Enc A} q (L: list A) p: hprop :=
   | nil => \[p = q]
   | x::L' => \exists (p':loc), (p ~> MCell x p') \* (p' ~> MListSeg q L')
   end.
+
+Notation "'$MListSeg' ┆ x1 ┆ x2 " :=
+  (MListSeg x1 x2)
+    (in custom val at level 200,
+     x1 constr, x2 constr at level 200): sepviz_scope.
 
 Section MListSegLemmas.
 

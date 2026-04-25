@@ -1,6 +1,5 @@
 COQC=coqc
 USE_NIX ?= false
-OUT_DIR ?= _sepviz_build
 
 ifeq ($(USE_NIX), false)
 	COQ_FLAGS=-R theories SepDiagram -Q vendor/cfml/lib/coq CFML -Q vendor/tlc/src TLC
@@ -8,63 +7,66 @@ else
 	COQ_FLAGS=-R theories SepDiagram
 endif
 
+COQ_MF_FLAGS := $(COQ_FLAGS) -arg "-w -implicit-core-hint-db,-ambiguous-paths,-notation-incompatible-prefix,-automatic-prop-lowering"
+
+
+# libraries
+
+tlc:
+	$(MAKE) -C vendor/tlc -j4
+.PHONY: tlc
+
+cfml: tlc
+	$(MAKE) -C vendor/cfml .depend_lib
+	$(MAKE) COQEXTRAFLAGS="-Q ../tlc/src TLC" -C vendor/cfml libcoq
+.PHONY: cfml
+
+
+# theories
+
+VFILES = WPUntyped.v SepvizNotations.v ListNull.v LiterateQueue.v LiterateTree.v
+ALLVFILES = $(patsubst %,theories/%,$(VFILES))
+ALLVOFILES := $(patsubst %.v,%.vo,$(ALLVFILES))
+
+build: Makefile.coq
+	$(MAKE) -f Makefile.coq
+	$(MAKE) sepviz
+.PHONY: build
+
+clean::
+	if [ -e Makefile.coq ]; then $(MAKE) -f Makefile.coq cleanall; fi
+	$(RM) $(wildcard Makefile.coq Makefile.coq.conf)
+	$(MAKE) clean-sepviz
+.PHONY: clean
+
+Makefile.coq:
+	coq_makefile $(COQ_MF_FLAGS) -o Makefile.coq $(ALLVFILES)
+
+-include Makefile.coq
+
+
+# sep-viz
+
+.PHONY: sepviz clean-sepviz
+
 ALECTRYON_FLAGS := \
   $(COQ_FLAGS) \
   --webpage-style windowed \
   --long-line-threshold 0
 
-LIB := theories/lib
-EXM := theories/examples
+SEPVIZ_OUTDIR ?= _sepviz_build
+SEPVIZ_MODULES = LiterateQueue LiterateTree
+SEPVIZ_HTMLS := $(patsubst %,$(SEPVIZ_OUTDIR)/CFML-%.html, $(SEPVIZ_MODULES))
 
-VFILES_IN_LIB := SepViz_Notations.v WPUntyped.v ListNull.v
-VFILES_IN_EXM := LiterateQueue.v LiterateTree.v LiterateTest.v
+sepviz: $(SEPVIZ_HTMLS)
+.PHONY: sepviz
 
-LIB_VFILES := $(addprefix $(LIB)/, $(VFILES_IN_LIB))
-LIB_VO_FILES := $(addprefix $(LIB)/, $(VFILES_IN_LIB:.v=.vo))
-EXM_VO_FILES := $(addprefix $(EXM)/, $(VFILES_IN_EXM:.v=.vo))
-# HTML_FILES := $(addprefix $(OUT_DIR)/, $(VFILES_IN_EXM:.v=.html))
-HTML_FILES := $(OUT_DIR)/CFML-Queue.html $(OUT_DIR)/CFML-Tree.html $(OUT_DIR)/CFML-Test.html
-
-.PHONY: default tlc cfml sepviz sepviz-clean clean-theories clean test
-
-default: $(LIB_VO_FILES) $(EXM_VO_FILES) $(HTML_FILES)
-
-sepviz: $(HTML_FILES)
-
-tlc:
-	$(MAKE) -C vendor/tlc -j4
-
-cfml: tlc
-	$(MAKE) -C vendor/cfml .depend_lib
-	$(MAKE) COQEXTRAFLAGS="-Q ../tlc/src TLC" -C vendor/cfml libcoq
-
-%.vo: %.v
-	$(COQC) $(COQ_FLAGS) $<
-
-$(LIB)/WPUntyped.vo: $(LIB)/SepViz_Notations.vo
-$(LIB)/ListNull.vo: $(LIB)/WPUntyped.vo
-
-
-$(OUT_DIR):
+$(SEPVIZ_OUTDIR):
 	mkdir -p $@
 
-$(OUT_DIR)/CFML-Queue.html: $(EXM)/LiterateQueue.v $(LIB_VFILES:.v=.vo)
+$(SEPVIZ_OUTDIR)/CFML-%.html: theories/%.v | $(ALLVOFILES)
 	alectryon $(ALECTRYON_FLAGS) --output $@ $<
 
-$(OUT_DIR)/CFML-Tree.html: $(EXM)/LiterateTree.v $(LIB_VFILES:.v=.vo)
-	alectryon $(ALECTRYON_FLAGS) --output $@ $<
-
-$(OUT_DIR)/CFML-Test.html: $(EXM)/LiterateTest.v $(LIB_VFILES:.v=.vo)
-	alectryon $(ALECTRYON_FLAGS) --output $@ $<
-
-sepviz-clean:
-	rm -rf $(OUT_DIR)
-
-clean-theories:
-	find theories \( -name "*.vo" -o -name "*.vos" -o -name "*.vok" -o -name "*.glob" \) -delete
-
-clean: clean-web clean-theories
-
-test: default
-	firefox $(OUT_DIR)/LiterateQueue.html
-	firefox $(OUT_DIR)/LiterateTree.html
+clean-sepviz:
+	rm -rf $(SEPVIZ_OUTDIR)
+.PHONY: clean-sepviz

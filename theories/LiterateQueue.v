@@ -14,7 +14,10 @@ Modified by Yawen.
  *)
 
 #[warnings="-notation-overridden -ambiguous-paths -notation-incompatible-prefix"]
-From SepDiagram.lib Require Import WPUntyped ListNull.
+From SepDiagram Require Import WPUntyped ListNull.
+
+Require Import SepvizNotations.
+Open Scope sepviz_scope.
 
 Ltac auto_star ::=
   try easy;
@@ -27,6 +30,11 @@ Implicit Types (p q f b: loc).
 Definition MQueue [A] `{EA: Enc A} (L: list A) p :=
   \exists f b (d:A),
     p ~> MCell f b \* f ~> MListSeg b L \* b ~> MCell d null.
+
+Notation "'$MQueue' ┆ x1 ┆ x2 " :=
+  (MQueue x1 x2)
+    (in custom val at level 200,
+     x1 constr, x2 constr at level 200): sepviz_scope.
 
 Section QueueApiImpl.
 
@@ -73,48 +81,6 @@ Proof using.
   xchanges MListSeg_MCell_conflict ;=> M.
   rewrite* isTrue_eq_isTrue_eq.
 Qed.
-
-(** ** file-specific sepviz notations *)
-
-Notation "'$MCell' '┆' x1" :=
-  (MCell x1)
-    (in custom val at level 200,
-     x1 constr at level 200).
-
-Notation "'$MCell' '┆' x1 '┆' x2 " :=
-  (MCell x1 x2)
-    (in custom val at level 200,
-     x1 constr at level 200,
-     x2 constr at level 200).
-
-Notation "'$MQueue' '┆' x1" :=
-  (MQueue x1)
-    (in custom val at level 200,
-     x1 constr at level 200).
-
-Notation "'$MQueue' '┆' x1 '┆' x2 " :=
-  (MQueue x1 x2)
-    (in custom val at level 200,
-     x1 constr at level 200,
-     x2 constr at level 200).
-
-Notation "'$MListSeg' '┆' x1 '┆' x2 " :=
-  (MListSeg x1 x2)
-    (in custom val at level 200,
-     x1 constr at level 200,
-     x2 constr at level 200).
-
-Notation "'$list_app' '┆' x1 '┆' x2 " :=
-  (app x1 x2)
-    (in custom val at level 200,
-     x1 constr at level 200,
-     x2 constr at level 200).
-
-Notation "'$list_cons' '┆' x1 '┆' x2 " :=
-  (cons x1 x2)
-    (in custom val at level 200,
-     x1 constr at level 200,
-     x2 constr at level 200).
 
 (*||*)
 

@@ -6,7 +6,6 @@ formulas [Wpgen]. *)
 
 #[warnings="-notation-overridden -ambiguous-paths -notation-incompatible-prefix"]
 From CFML Require Export WPLib.
-Require Export SepViz_Notations.
 
 Set Implicit Arguments.
 

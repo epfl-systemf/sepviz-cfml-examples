@@ -9,5 +9,10 @@
 .*.aux
 .lia.cache
 
+# makefile
+Makefile.coq
+Makefile.coq.conf
+.Makefile.coq.d
+
 # sepviz
 _sepviz_build
