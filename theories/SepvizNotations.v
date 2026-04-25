@@ -74,6 +74,7 @@ Notation "⟬* 'PRE' @ H1 *⟭ ==> ⟬* 'POST' @ H2 *⟭" :=
 Notation "Q \*+ H" := (fun x => hstar (Q x) H) (only parsing): heap_scope.
 
 Section septest.
+  Open Scope sepviz_scope.
   Parameter A B C: hprop.
   Parameter P: Prop.
   Check (hstar A B).

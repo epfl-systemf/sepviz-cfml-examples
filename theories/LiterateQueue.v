@@ -31,10 +31,10 @@ Definition MQueue [A] `{EA: Enc A} (L: list A) p :=
   \exists f b (d:A),
     p ~> MCell f b \* f ~> MListSeg b L \* b ~> MCell d null.
 
-Notation "'$MQueue' ┆ x1 ┆ x2 " :=
-  (MQueue x1 x2)
+Notation "'$MQueue' ┆ x " :=
+  (MQueue x)
     (in custom val at level 200,
-     x1 constr, x2 constr at level 200): sepviz_scope.
+     x constr at level 200): sepviz_scope.
 
 Section QueueApiImpl.
 
