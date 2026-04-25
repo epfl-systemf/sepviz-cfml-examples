@@ -77,7 +77,6 @@
               ]
               ++ (with coqPkgs; [
                 coq
-                serapi
                 tlc
                 cfml
               ]);
