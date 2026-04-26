@@ -64,7 +64,7 @@ sepviz: $(SEPVIZ_HTMLS)
 $(SEPVIZ_OUTDIR):
 	mkdir -p $@
 
-$(SEPVIZ_OUTDIR)/CFML-%.html: theories/%.v | $(ALLVOFILES)
+$(SEPVIZ_OUTDIR)/CFML-%.html: theories/%.v $(ALLVOFILES) | $(SEPVIZ_OUTDIR)
 	alectryon $(ALECTRYON_FLAGS) --output $@ $<
 
 clean-sepviz:
