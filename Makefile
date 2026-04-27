@@ -7,7 +7,7 @@ else
 	COQ_FLAGS=-R theories SepDiagram
 endif
 
-COQ_MF_FLAGS := $(COQ_FLAGS) -arg "-w -implicit-core-hint-db,-ambiguous-paths,-notation-incompatible-prefix,-automatic-prop-lowering"
+COQ_MF_FLAGS := $(COQ_FLAGS) -arg "-w -notation-overridden,-notation-incompatible-prefix,-ambiguous-paths,-implicit-core-hint-db,-automatic-prop-lowering"
 
 
 # libraries
@@ -40,7 +40,7 @@ clean::
 .PHONY: clean
 
 Makefile.coq:
-	coq_makefile $(COQ_MF_FLAGS) -o Makefile.coq $(ALLVFILES)
+	coq_makefile -docroot SepDiagram $(COQ_MF_FLAGS) -o Makefile.coq $(ALLVFILES)
 
 -include Makefile.coq
 

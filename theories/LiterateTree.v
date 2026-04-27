@@ -2,7 +2,6 @@
 .. coq:: none
 |*)
 
-#[warnings="-notation-overridden -ambiguous-paths -notation-incompatible-prefix"]
 From SepDiagram Require Import WPUntyped.
 
 Require Import SepvizNotations.

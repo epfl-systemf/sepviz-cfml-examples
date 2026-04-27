@@ -4,7 +4,6 @@ formulas [Wpgen]. *)
 
 (* TODO: rename this file? *)
 
-#[warnings="-notation-overridden -ambiguous-paths -notation-incompatible-prefix"]
 From CFML Require Export WPLib.
 
 Set Implicit Arguments.
