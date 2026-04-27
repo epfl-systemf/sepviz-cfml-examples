@@ -50,7 +50,6 @@ Makefile.coq:
 .PHONY: sepviz clean-sepviz
 
 ALECTRYON_FLAGS := \
-  $(COQ_FLAGS) \
   --webpage-style windowed \
   --long-line-threshold 0
 

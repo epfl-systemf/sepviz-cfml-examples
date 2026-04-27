@@ -1,5 +1,6 @@
 -arg -set -arg "'Printing Depth=100'"
 -arg -set -arg "'Printing Width=100'"
+-arg "-w -notation-overridden,-notation-incompatible-prefix,-ambiguous-paths,-implicit-core-hint-db,-automatic-prop-lowering"
 
 -R theories SepDiagram
 -Q vendor/cfml/lib/coq CFML
