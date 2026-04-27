@@ -53,12 +53,15 @@ Notation "'SPEC' t ⟬* 'PRE' @ H *⟭ ⟬* 'POST' @ Q *⟭" :=
   (Triple t H Q)
     (at level 200,
      t constr, H constr, Q constr at level 200,
+     only printing,
      format "'SPEC'  t '//' '⟬*'  'PRE'  '@'  H  '*⟭' '//' '⟬*'  'POST'  '@'  Q  '*⟭'"): sepviz_scope.
 
 Notation "⟬* 'PRE' @ H *⟭ 'CODE' F ⟬* 'POST' @ Q *⟭" :=
-  (himpl H (Wptag F _ Q))
+  (himpl H (F _ _ Q))
     (at level 200,
-     H constr, F constr, Q constr at level 200,
+     H constr,
+     F custom cf at level 0,
+     Q constr at level 200,
      format "'⟬*'  'PRE'  '@'  H  '*⟭' '//' 'CODE'  F '//' '⟬*'  'POST'  '@'  Q  '*⟭'"): sepviz_scope.
 
 (* For continuous animation *)

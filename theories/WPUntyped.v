@@ -9,16 +9,88 @@ From CFML Require Export WPLib.
 
 Set Implicit Arguments.
 
-Declare Scope Wp_untyped_scope.
-Open Scope Wp_untyped_scope.
+(* ========================================================================== *)
+(** * Display notations for untyped CF constructs *)
+
+(** ** New notations. *)
+
+Notation "'$' v" :=
+ (Wptag (Wpgen_val_unlifted v))
+ (in custom cf at level 69,
+  v constr at level 0,
+  only printing,
+  format "'$' v") : cf_scope.
+
+Notation "'Let' '{' A E '}' x ':=' F1 'in' F2" :=
+ (Wptag (Wpgen_let F1 (fun A E x => F2)))
+ (in custom cf at level 69,
+  only printing,
+  x name, A name, E name,
+  F1 custom cf at level 99,
+  F2 custom cf at level 99,
+  right associativity,
+  format "'[v' '[' 'Let'  '{' A  E '}'  x  ':='  F1  'in' ']' '/' '[' F2 ']' ']'") : cf_scope.
+
+Notation "'App' f v1 .. vn" :=
+ (Wptag (Wpgen_app_untyped (trm_apps f (trms_vals (@cons val v1 .. (@cons val vn (@nil val)) ..)))))
+ (in custom cf at level 68,
+  only printing,
+  f constr at level 0,
+  v1 constr at level 0,
+  vn constr at level 0) : cf_scope.
+
+Notation "'App' f v1 v2 .. vn" :=
+ (Wptag (Wpgen_app_untyped (trm_apps f (trms_vals (@cons val v1 (@cons val v2 .. (@cons val vn (@nil val)) ..))))))
+ (in custom cf at level 68,
+  only printing,
+  f constr at level 0,
+  v1 constr at level 0,
+  v2 constr at level 0,
+  vn constr at level 0) : cf_scope.
+
+Notation "F1 ; F2" :=
+ (Wptag (Wpgen_seq F1 F2))
+ (in custom cf at level 68,
+  only printing,
+  F1 custom cf at level 99,
+  F2 custom cf at level 99,
+  right associativity,
+  format "'[v' '[' F1 ']'  ; '/' '[' F2 ']' ']'") : cf_scope.
+
+Notation "'Bind' x ':' T 'In' F ; Q" :=
+ (fun x : T => F _ _ Q)
+ (at level 200,
+  only printing,
+  x name, T constr,
+  F custom cf at level 0,
+  Q constr at level 200,
+  right associativity,
+  format "'[v' '[' 'Bind'  x  ':'  T  'In' ']' '/' '[' F ']' '/' ; '/' '[' Q ']' ']'") : cf_scope.
+
+(** ** Overwritten notations. *)
+
+Notation "'Let' x ':=' F1 'in' F2" :=
+ (Wptag (Wpgen_let_trm F1 (fun x => F2)))
+ (in custom cf at level 69,
+  only printing,
+  x ident,
+  F1 custom cf at level 99,
+  F2 custom cf at level 99,
+  right associativity,
+  format "'[v' '[' 'Let'  x  ':='  F1  'in' ']' '/' '[' F2 ']' ']'") : cf_scope.
+
+Notation "'If_' v 'Then' F1 'Else' F2" :=
+ (Wptag (Wpgen_if v F1 F2))
+ (in custom cf at level 69,
+  only printing,
+  v constr at level 69,
+  F1 custom cf at level 99,
+  F2 custom cf at level 99,
+  left associativity,
+  format "'[v' '[' 'If_'  v  'Then'  ']' '/' '['   F1 ']' '/' 'Else' '/' '['   F2 ']' ']'") : cf_scope.
 
 (* ========================================================================== *)
 (**  [Wpgen_let] *)
-
-(* Notations for characteristic formulas *)
-Notation "'UntypedLet'' X '[:'  A 'with' E ']'  ':=' F1 'in' F2" :=
-  ((Wpgen_let F1 (fun A E X => F2)))
-  (in custom cf at level 69, right associativity): Wp_untyped_scope.
 
 (** [xlet_lemma] is copied from [WPRecord.v] in CFML.
   * For goal [PRE H CODE (Let x := F1 in F2) POST Q], produces two goals:
@@ -113,20 +185,6 @@ Tactic Notation "mxlet_cont" :=
 
 (* ========================================================================== *)
 (** [Wpgen_app_untyped] *)
-
-Notation "'UntypedApp'' f" :=
- ((*Wptag*) (Wpgen_app_untyped f))
-  (in custom cf at level 68, f constr at level 0): Wp_untyped_scope.
-
-Notation "'UntypedApp' f x1 .. xn" :=
- ((*Wptag*) (Wpgen_app_untyped (trm_apps f (@cons trm (enc x1) .. (@cons trm (enc xn) (@nil trm)) ..))))
-  (in custom cf at level 67,
-   f constr at level 0,
-   x1 constr at level 0,
-   xn constr at level 0)
-  : Wp_untyped_scope.
-
-(* Check (Wpgen_app_untyped (trm_apps ?[f] (@cons trm (enc ?[x1]) nil))). *)
 
 (* xlemma. Copied from [WPRecord.v] in cfml. *)
 Lemma xapp_untyped_lemma : forall A `{EA:Enc A} (Q1:A->hprop) t H1 H Q,
